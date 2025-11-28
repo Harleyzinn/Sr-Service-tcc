@@ -1,0 +1,149 @@
+/* Ajuste global */
+
+body {
+    background-color: #1a1a1a;
+    /* Garante o fundo preto/escuro */
+    color: #fff;
+}
+
+main {
+    padding-top: 140px;
+    min-height: 80vh;
+    display: flex;
+    justify-content: center;
+}
+
+.profile-card {
+    background-color: #2a2a2a;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(240, 192, 41, 0.15);
+    width: 90%;
+    max-width: 800px;
+    border: 1px solid #444;
+}
+
+.profile-header {
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #f0c029;
+    padding-bottom: 20px;
+}
+
+.profile-header h1 {
+    font-size: 2.2em;
+    color: #f0c029;
+    margin-bottom: 10px;
+}
+
+.profile-header p {
+    color: #ccc;
+}
+
+.section-title {
+    color: #f0c029;
+    font-size: 1.2em;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.info-field {
+    margin-bottom: 15px;
+}
+
+.info-field.full-width {
+    grid-column: 1 / -1;
+}
+
+.info-field label {
+    display: block;
+    margin-bottom: 8px;
+    color: #ddd;
+    font-weight: bold;
+}
+
+
+/* Wrapper para input + botão de editar */
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.info-field input {
+    width: 100%;
+    background-color: #333;
+    border: 1px solid #555;
+    border-radius: 5px;
+    padding: 12px;
+    color: #fff;
+    font-size: 1em;
+    transition: border-color 0.3s;
+}
+
+.info-field input[readonly] {
+    background-color: #222;
+    border-color: #333;
+    color: #aaa;
+}
+
+.info-field input:focus {
+    outline: none;
+    border-color: #f0c029;
+    background-color: #3a3a3a;
+}
+
+
+/* Botão de Lápis */
+
+.edit-btn {
+    background: none;
+    border: none;
+    color: #f0c029;
+    font-size: 1.1em;
+    cursor: pointer;
+    position: absolute;
+    right: 10px;
+    padding: 5px;
+    transition: transform 0.2s;
+}
+
+.edit-btn:hover {
+    transform: scale(1.2);
+}
+
+.save-btn {
+    width: 100%;
+    padding: 15px;
+    background-color: #f0c029;
+    color: #1a1a1a;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.save-btn:hover {
+    background-color: #d4a910;
+    transform: translateY(-2px);
+}
+
+@media (max-width: 600px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}

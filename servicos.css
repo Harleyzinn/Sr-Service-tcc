@@ -1,0 +1,196 @@
+/* Ajuste global do Header */
+
+main {
+    padding-top: 93px;
+}
+
+
+/* --- Hero Section --- */
+
+.services-hero {
+    /* Usei outra imagem como background, mas você pode repetir a da Home se preferir */
+    background: url('image_bf7399.png') no-repeat center center/cover;
+    height: 350px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background-attachment: fixed;
+}
+
+.services-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    /* Máscara escura */
+}
+
+.hero-overlay {
+    position: relative;
+    z-index: 2;
+    color: #fff;
+    padding: 0 20px;
+}
+
+.hero-overlay h1 {
+    font-family: 'RopaSans-Regular', sans-serif;
+    font-size: 3.5em;
+    color: #f0c029;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+.hero-overlay p {
+    font-size: 1.3em;
+    font-family: 'Poppins-Thin', sans-serif;
+    font-weight: bold;
+}
+
+
+/* --- Lista de Serviços --- */
+
+.services-list {
+    padding: 80px 0;
+    background-color: #f4f4f4;
+}
+
+.services-intro {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto 60px;
+}
+
+.services-intro h2 {
+    font-size: 2.5em;
+    color: #1a1a1a;
+    font-family: 'RopaSans-Regular', sans-serif;
+    margin-bottom: 15px;
+}
+
+.divider-center {
+    width: 60px;
+    height: 4px;
+    background-color: #f0c029;
+    margin: 0 auto 20px;
+}
+
+.services-intro p {
+    color: #666;
+    font-size: 1.1em;
+}
+
+
+/* --- Grid de Cartões --- */
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    /* Responsivo automático */
+    gap: 30px;
+}
+
+.service-card {
+    background: #fff;
+    padding: 40px 30px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s, box-shadow 0.3s;
+    border-top: 4px solid transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.service-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+    border-top: 4px solid #f0c029;
+}
+
+.icon-box {
+    width: 60px;
+    height: 60px;
+    background-color: #1a1a1a;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 25px;
+    transition: background-color 0.3s;
+}
+
+.service-card:hover .icon-box {
+    background-color: #f0c029;
+}
+
+.icon-box i {
+    font-size: 1.8em;
+    color: #f0c029;
+    transition: color 0.3s;
+}
+
+.service-card:hover .icon-box i {
+    color: #1a1a1a;
+    /* Ícone fica preto no hover */
+}
+
+.service-card h3 {
+    font-size: 1.4em;
+    color: #1a1a1a;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+.service-card p {
+    color: #555;
+    line-height: 1.6;
+    font-size: 0.95em;
+    flex-grow: 1;
+    /* Empurra o conteúdo se houver botão */
+}
+
+
+/* Cartão de Destaque (Fale Conosco) */
+
+.highlight-card {
+    background-color: #1a1a1a;
+    border-top: 4px solid #f0c029;
+}
+
+.highlight-card .icon-box {
+    background-color: #f0c029;
+}
+
+.highlight-card .icon-box i {
+    color: #1a1a1a;
+}
+
+.highlight-card h3 {
+    color: #fff;
+}
+
+.highlight-card p {
+    color: #ccc;
+    margin-bottom: 25px;
+}
+
+.btn-service {
+    align-self: flex-start;
+    padding: 10px 25px;
+    background-color: #f0c029;
+    color: #1a1a1a;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 25px;
+    transition: background 0.3s;
+}
+
+.btn-service:hover {
+    background-color: #fff;
+}

@@ -1,0 +1,247 @@
+/* Reset básico */
+
+body {
+    background-color: #f4f4f4;
+    color: #333;
+    font-family: Arial, sans-serif;
+}
+
+
+/* Wrapper Principal */
+
+.main-wrapper {
+    padding-top: 140px;
+    padding-bottom: 60px;
+    min-height: 80vh;
+    display: flex;
+    justify-content: center;
+}
+
+
+/* Cartão Central */
+
+.content-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+    width: 90%;
+}
+
+.content-card.wide-card {
+    max-width: 1100px;
+}
+
+
+/* Cabeçalho do Cartão */
+
+.card-header {
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #f0c029;
+    padding-bottom: 20px;
+}
+
+
+/* Cabeçalho Secundário (Histórico) */
+
+.secondary-header {
+    margin-top: 10px;
+    border-bottom: 1px solid #eee;
+    /* Linha mais fina */
+}
+
+.secondary-header h2 {
+    font-size: 1.8em;
+    color: #555;
+    /* Cor mais discreta */
+    margin-bottom: 5px;
+}
+
+.section-divider {
+    border: 0;
+    border-top: 1px dashed #ccc;
+    margin: 50px 0;
+}
+
+.card-header h1 {
+    font-size: 2.2em;
+    color: #1a1a1a;
+    margin-bottom: 10px;
+}
+
+.card-header p {
+    color: #666;
+    font-size: 1.1em;
+}
+
+
+/* --- Filtro --- */
+
+.filter-wrapper {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-wrapper label {
+    font-weight: bold;
+    color: #1a1a1a;
+}
+
+.filter-wrapper select {
+    padding: 8px 15px;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    background-color: #f9f9f9;
+    cursor: pointer;
+    font-size: 0.95em;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.filter-wrapper select:focus {
+    border-color: #f0c029;
+}
+
+
+/* --- Tabela --- */
+
+.table-responsive {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    margin-bottom: 20px;
+}
+
+.custom-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+}
+
+.custom-table th {
+    background-color: #1a1a1a;
+    color: #f0c029;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.9em;
+    letter-spacing: 0.5px;
+    padding: 15px;
+    text-align: left;
+}
+
+.custom-table td {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    color: #555;
+    font-size: 0.95em;
+    vertical-align: middle;
+}
+
+.custom-table tr:hover {
+    background-color: #fcfcfc;
+}
+
+
+/* Badges de Status */
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: bold;
+    color: #fff;
+    text-transform: capitalize;
+    display: inline-block;
+    min-width: 100px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.status-pendente {
+    background-color: #f39c12;
+}
+
+.status-aprovado,
+.status-concluido {
+    background-color: #27ae60;
+}
+
+.status-recusado,
+.status-cancelado {
+    background-color: #c0392b;
+}
+
+.status-em-analise {
+    background-color: #3498db;
+}
+
+.status-nao-visualizado {
+    background-color: #7f8c8d;
+}
+
+
+/* Botão de Ver Descrição */
+
+.btn-ver-desc {
+    transition: transform 0.2s, background-color 0.3s !important;
+}
+
+.btn-ver-desc:hover {
+    background-color: #d4a910 !important;
+    transform: scale(1.05);
+}
+
+
+/* Empty State */
+
+.no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
+}
+
+.empty-state-icon {
+    font-size: 4em;
+    color: #eee;
+    margin-bottom: 20px;
+}
+
+.btn-novo-orcamento {
+    background-color: #1a1a1a;
+    color: #f0c029;
+    border: none;
+    padding: 12px 30px;
+    font-size: 1em;
+    font-weight: bold;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.3s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-novo-orcamento:hover {
+    background-color: #333;
+    color: #f0c029;
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .content-card {
+        padding: 25px;
+        width: 95%;
+    }
+    .card-header h1 {
+        font-size: 1.8em;
+    }
+    .filter-wrapper {
+        flex-direction: column;
+    }
+}

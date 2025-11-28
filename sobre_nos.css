@@ -1,0 +1,162 @@
+/* Ajuste global */
+
+main {
+    padding-top: 120px;
+    /* Compensa o header fixo */
+}
+
+
+/* --- Hero Section Específica --- */
+
+.about-hero {
+    /* Use uma imagem de fundo real aqui */
+    background: url('image_492a1e.jpg') no-repeat center center/cover;
+    height: 350px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #fff;
+}
+
+.about-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    /* Máscara escura */
+}
+
+.about-hero-overlay {
+    position: relative;
+    z-index: 2;
+    padding: 20px;
+}
+
+.about-hero h1 {
+    font-size: 3.5em;
+    font-family: 'RopaSans-Regular', sans-serif;
+    text-transform: uppercase;
+    color: #f0c029;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.about-hero p {
+    font-size: 1.2em;
+    font-family: 'Poppins-Thin', sans-serif;
+    font-weight: bold;
+}
+
+
+/* --- Conteúdo Principal --- */
+
+.about-content {
+    padding: 80px 0;
+    background-color: #fff;
+}
+
+.about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 50px;
+    align-items: center;
+}
+
+.about-text h2 {
+    font-size: 2.5em;
+    color: #1a1a1a;
+    margin-bottom: 15px;
+}
+
+.divider {
+    height: 4px;
+    width: 60px;
+    background-color: #f0c029;
+    margin-bottom: 25px;
+}
+
+.about-text p {
+    margin-bottom: 20px;
+    line-height: 1.8;
+    color: #555;
+    font-size: 1.05em;
+    text-align: justify;
+}
+
+.about-image img {
+    width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    border: 5px solid #fff;
+    /* Moldura branca */
+}
+
+
+/* --- Seção Missão, Visão, Valores --- */
+
+.mvv-section {
+    padding: 80px 0;
+    background-color: #f4f4f4;
+}
+
+.mvv-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+}
+
+.mvv-card {
+    background: #fff;
+    padding: 40px 30px;
+    text-align: center;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-bottom: 4px solid transparent;
+}
+
+.mvv-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    border-bottom: 4px solid #f0c029;
+}
+
+.mvv-card i {
+    font-size: 3em;
+    color: #f0c029;
+    margin-bottom: 20px;
+}
+
+.mvv-card h3 {
+    font-size: 1.5em;
+    color: #1a1a1a;
+    margin-bottom: 15px;
+}
+
+.mvv-card p {
+    color: #666;
+    line-height: 1.6;
+}
+
+
+/* Responsividade */
+
+@media (max-width: 768px) {
+    .about-grid {
+        grid-template-columns: 1fr;
+    }
+    .mvv-grid {
+        grid-template-columns: 1fr;
+    }
+    .about-text {
+        order: 2;
+    }
+    .about-image {
+        order: 1;
+    }
+}

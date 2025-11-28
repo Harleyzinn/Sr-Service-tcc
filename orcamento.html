@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitar Orçamento - SR Service</title>
+
+    <!-- CSS Global -->
+    <link rel="stylesheet" href="style.css">
+    <!-- CSS Específico (Reutilizando base de consultar + estilos novos) -->
+    <link rel="stylesheet" href="orcamento.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <img src="sr-logo-placeholder.png" alt="SR Logo">
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Página Inicial</a></li>
+                    <li><a href="sobre_nos.html">Sobre-nós</a></li>
+                    <li><a href="orcamento.html" class="active">Orçamento</a></li>
+                </ul>
+            </nav>
+            <div class="login-area"></div>
+        </div>
+    </header>
+
+    <main class="main-wrapper">
+        <div class="content-card">
+            <div class="card-header">
+                <h1><i class="fas fa-calculator"></i> Solicitar Orçamento</h1>
+                <p>Preencha o formulário abaixo e receba uma proposta personalizada.</p>
+            </div>
+
+            <form id="form-orcamento" class="orcamento-form">
+                <!-- Seção: Dados da Empresa/Contato -->
+                <h3 class="section-title"><i class="fas fa-building"></i> Dados de Contato</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="nome_empresa">Nome da Empresa / Cliente</label>
+                        <div class="input-icon">
+                            <i class="fas fa-user-tie"></i>
+                            <input type="text" id="nome_empresa" name="nome_empresa" required placeholder="Ex: Indústria XYZ Ltda">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nome_contato">Nome do Responsável</label>
+                        <div class="input-icon">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="nome_contato" name="nome_contato" required placeholder="Quem devemos procurar?">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email_orc">E-mail Comercial</label>
+                        <div class="input-icon">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="email_orc" name="email_orc" required placeholder="contato@empresa.com">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="telefone">Telefone / WhatsApp</label>
+                        <div class="input-icon">
+                            <i class="fas fa-phone"></i>
+                            <input type="tel" id="telefone" name="telefone" required placeholder="(XX) 99999-9999">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção: Detalhes do Serviço -->
+                <h3 class="section-title"><i class="fas fa-cogs"></i> Detalhes do Serviço</h3>
+                <div class="form-group">
+                    <label for="tipo_servico">Tipo de Serviço</label>
+                    <div class="input-icon">
+                        <i class="fas fa-list"></i>
+                        <select id="tipo_servico" name="tipo_servico" required>
+                            <option value="" disabled selected>Selecione uma opção...</option>
+                            <option value="Manutenção Preventiva">Manutenção Preventiva</option>
+                            <option value="Manutenção Corretiva">Manutenção Corretiva</option>
+                            <option value="Montagem de Equipamentos">Montagem de Equipamentos</option>
+                            <option value="Peças de Reposição">Peças de Reposição</option>
+                            <option value="Consultoria Técnica">Consultoria Técnica</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="descricao">Descrição da Necessidade</label>
+                    <textarea id="descricao" name="descricao" rows="5" required placeholder="Descreva o equipamento, o problema ou a peça que você precisa..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit-orcamento">
+                        <i class="fas fa-paper-plane"></i> Enviar Solicitação
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-logo"><img src="sr-logo-placeholder.png" alt="SR Logo"></div>
+            <div class="footer-contact">
+                <p>©SR Service Cranes and Components</p>
+                <p>tel: (xx)997000206</p>
+                <p>email: adrekzo44@gmail.com</p>
+                <p>CEP: 18890-762</p>
+            </div>
+            <div class="footer-social"><a href="#"><i class="fab fa-whatsapp"></i></a><a href="#"><i class="fab fa-instagram"></i></a><a href="#"><i class="fab fa-linkedin-in"></i></a></div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script src="orcamento.js"></script>
+</body>
+
+</html>

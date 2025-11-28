@@ -1,0 +1,190 @@
+/* Reset básico para garantir o fundo total */
+
+body,
+html {
+    height: 100%;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #111;
+    /* Fundo da página bem escuro */
+    color: #fff;
+}
+
+
+/* Centraliza o card na tela */
+
+.register-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
+    /* Gradiente sutil no fundo */
+}
+
+
+/* O Cartão Dourado */
+
+.register-card {
+    background-color: #0f0f0f;
+    /* Fundo do cartão quase preto */
+    border: 1px solid #f0c029;
+    /* Borda amarela fina */
+    border-radius: 12px;
+    padding: 40px;
+    width: 100%;
+    max-width: 800px;
+    /* AUMENTADO: De 500px para 800px para ficar mais largo */
+    box-shadow: 0 0 20px rgba(240, 192, 41, 0.15);
+    /* Brilho amarelo suave */
+    animation: fadeIn 0.5s ease-out;
+}
+
+
+/* Cabeçalho do Form */
+
+.register-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.register-header h1 {
+    font-family: 'RopaSans-Regular', sans-serif;
+    /* Se tiver essa fonte */
+    font-size: 2.2em;
+    color: #fff;
+    margin-bottom: 10px;
+}
+
+.register-header p {
+    color: #888;
+    font-size: 0.9em;
+}
+
+
+/* Grupos de Input */
+
+.form-group {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    /* Label em cima do input */
+    align-items: flex-start;
+    /* Alinha labels à esquerda */
+}
+
+.form-group label {
+    font-weight: bold;
+    color: #ddd;
+    margin-bottom: 8px;
+    font-size: 0.95em;
+    text-align: left;
+    width: 100%;
+}
+
+
+/* Estilo dos Inputs */
+
+.form-group input {
+    width: 100%;
+    padding: 12px 15px;
+    background-color: #252525;
+    /* Cinza escuro */
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 1em;
+    transition: border-color 0.3s, background-color 0.3s;
+    box-sizing: border-box;
+    /* Garante que padding não estoure a largura */
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #f0c029;
+    /* Borda amarela ao digitar */
+    background-color: #333;
+}
+
+.form-group input::placeholder {
+    color: #555;
+}
+
+
+/* Botões */
+
+.form-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.btn-cadastrar {
+    width: 100%;
+    padding: 14px;
+    background-color: #f0c029;
+    /* Amarelo ouro */
+    color: #1a1a1a;
+    /* Texto escuro para contraste */
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.3s;
+}
+
+.btn-cadastrar:hover {
+    background-color: #ffdb4d;
+    transform: translateY(-2px);
+}
+
+.btn-voltar {
+    background-color: #333;
+    color: #ccc;
+    padding: 10px 25px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.9em;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.btn-voltar:hover {
+    background-color: #444;
+    color: #fff;
+}
+
+
+/* Animação de entrada */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* Responsividade */
+
+@media (max-width: 480px) {
+    .register-card {
+        padding: 25px;
+        border: none;
+        /* Remove borda em telas muito pequenas para limpar visual */
+        box-shadow: none;
+        background-color: transparent;
+    }
+    .register-container {
+        padding: 10px;
+        align-items: flex-start;
+        /* Joga pro topo no mobile */
+    }
+}

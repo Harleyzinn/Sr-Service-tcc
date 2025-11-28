@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar Senha - SR Service</title>
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+
+    <style>
+        .recovery-container {
+            min-height: 80vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding-top: 100px;
+        }
+        
+        .recovery-card {
+            background: #2a2a2a;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 450px;
+            border-top: 4px solid #f0c029;
+            text-align: center;
+        }
+        
+        .recovery-card h2 {
+            color: #f0c029;
+            font-family: 'RopaSans-Regular', sans-serif;
+            font-size: 2.2em;
+            margin-bottom: 20px;
+        }
+        
+        .recovery-card p {
+            color: #ccc;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .form-group label {
+            color: #f0c029;
+            font-size: 0.9em;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            background: #333;
+            border: 1px solid #555;
+            color: #fff;
+            border-radius: 5px;
+        }
+        
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background: #f0c029;
+            color: #1a1a1a;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background 0.3s;
+        }
+        
+        .btn-submit:hover {
+            background: #d4a910;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <div class="logo"><img src="sr-logo-placeholder.png" alt="SR Logo"></div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Voltar ao Início</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="recovery-container">
+        <div class="recovery-card">
+            <h2>Nova Senha</h2>
+            <p>Digite sua nova senha abaixo para recuperar o acesso.</p>
+
+            <form id="recoveryForm">
+                <div class="form-group">
+                    <label>Nova Senha</label>
+                    <input type="password" id="newPassword" required minlength="6" placeholder="Mínimo 6 caracteres">
+                </div>
+                <div class="form-group">
+                    <label>Confirmar Nova Senha</label>
+                    <input type="password" id="confirmPassword" required minlength="6" placeholder="Repita a senha">
+                </div>
+                <button type="submit" class="btn-submit">Redefinir Senha</button>
+            </form>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async() => {
+            // Verifica se existe a sessão de recuperação (pelo hash da URL)
+            // O Supabase processa o hash automaticamente ao carregar a lib
+
+            const form = document.getElementById('recoveryForm');
+
+            form.addEventListener('submit', async(e) => {
+                e.preventDefault();
+                const newPass = document.getElementById('newPassword').value;
+                const confirmPass = document.getElementById('confirmPassword').value;
+
+                if (newPass !== confirmPass) {
+                    showCustomModal("As senhas não coincidem!", "Erro");
+                    return;
+                }
+
+                // Atualiza a senha do usuário logado (o link de email já logou ele temporariamente)
+                const {
+                    data,
+                    error
+                } = await supabase.auth.updateUser({
+                    password: newPass
+                });
+
+                if (error) {
+                    showCustomModal("Erro ao atualizar: " + error.message, "Erro");
+                } else {
+                    await showCustomModal("Senha atualizada com sucesso!", "Sucesso");
+                    window.location.href = 'index.html'; // Redireciona para home
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
