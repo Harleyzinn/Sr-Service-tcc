@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', async() => {
-    // CORREÇÃO: Usa o cliente inicializado globalmente
     const sbClient = window.supabase;
 
     if (!sbClient || !sbClient.auth) {
@@ -8,41 +7,40 @@ document.addEventListener('DOMContentLoaded', async() => {
         return;
     }
 
-    // --- MÁSCARA DE CPF/CNPJ (Adicionada e Corrigida) ---
+    // --- MÁSCARA DE CPF/CNPJ ---
+    function aplicarMascaraCpf(value) {
+        value = value.replace(/\D/g, ""); // Remove letras
+        if (value.length > 14) value = value.slice(0, 14);
+
+        if (value.length <= 11) {
+            value = value.replace(/(\d{3})(\d)/, "$1.$2");
+            value = value.replace(/(\d{3})(\d)/, "$1.$2");
+            value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+        } else {
+            value = value.replace(/^(\d{2})(\d)/, "$1.$2");
+            value = value.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+            value = value.replace(/\.(\d{3})(\d)/, ".$1/$2");
+            value = value.replace(/(\d{4})(\d{1,2})$/, "$1-$2");
+        }
+        return value;
+    }
+
     const cpfInput = document.getElementById('cpf');
     if (cpfInput) {
         cpfInput.addEventListener('input', (e) => {
-            let value = e.target.value.replace(/\D/g, ""); // Remove tudo que não é dígito
-
-            if (value.length > 14) value = value.slice(0, 14); // Limite
-
-            if (value.length <= 11) {
-                // Máscara CPF: 000.000.000-00
-                value = value.replace(/(\d{3})(\d)/, "$1.$2");
-                value = value.replace(/(\d{3})(\d)/, "$1.$2");
-                value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-            } else {
-                // Máscara CNPJ: 00.000.000/0000-00
-                value = value.replace(/^(\d{2})(\d)/, "$1.$2");
-                value = value.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
-                value = value.replace(/\.(\d{3})(\d)/, ".$1/$2");
-                value = value.replace(/(\d{4})(\d{1,2})$/, "$1-$2");
-            }
-            e.target.value = value;
+            e.target.value = aplicarMascaraCpf(e.target.value);
         });
     }
 
-    // Verifica Login
+    // --- CARREGAMENTO DE DADOS ---
     const { data: { user } } = await sbClient.auth.getUser();
 
     if (!user) {
         if (typeof showCustomModal === 'function') await showCustomModal('Faça login para acessar seu perfil.', 'Acesso Negado');
-        else alert('Faça login para acessar seu perfil.');
         window.location.href = 'index.html';
         return;
     }
 
-    // Carrega Dados do Perfil
     const { data: perfil, error } = await sbClient
         .from('usu_cadastro')
         .select('*')
@@ -52,13 +50,13 @@ document.addEventListener('DOMContentLoaded', async() => {
     if (perfil) {
         document.getElementById('nome').value = perfil.NOME_USU || '';
         document.getElementById('email').value = perfil.EMAIL_USU || user.email;
-        document.getElementById('cpf').value = perfil.CPF_CNPJ_USU || '';
+        document.getElementById('cpf').value = perfil.CPF_CNPJ_USU ? aplicarMascaraCpf(perfil.CPF_CNPJ_USU) : '';
         document.getElementById('endereco').value = perfil.END_USU || '';
     } else {
         document.getElementById('email').value = user.email;
     }
 
-    // Configura botões de edição
+    // Botões de Edição
     document.querySelectorAll('.edit-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const input = e.currentTarget.parentElement.querySelector('input');
@@ -72,34 +70,53 @@ document.addEventListener('DOMContentLoaded', async() => {
         });
     });
 
-    // Salvar Alterações
+    // --- SALVAR (COM VALIDAÇÃO) ---
     const form = document.getElementById('form-perfil');
     form.addEventListener('submit', async(e) => {
         e.preventDefault();
 
         const nome = document.getElementById('nome').value;
-        const cpf = document.getElementById('cpf').value; // Pega o valor com a máscara
+        const cpfRaw = document.getElementById('cpf').value;
         const endereco = document.getElementById('endereco').value;
         const novaSenha = document.getElementById('nova_senha').value;
         const confirmaSenha = document.getElementById('confirma_senha').value;
 
-        // 1. Atualiza Dados Cadastrais
+        // >>> VALIDAÇÃO DE CPF/CNPJ (NOVO) <<<
+        const cpfLimpo = cpfRaw.replace(/\D/g, '');
+
+        if (cpfLimpo.length === 11) {
+            if (!validarCPF(cpfLimpo)) {
+                if (typeof showCustomModal === 'function') showCustomModal('O CPF informado é inválido. Verifique os números.', 'Erro de Validação');
+                else alert('CPF Inválido');
+                return; // BLOQUEIA O SALVAMENTO
+            }
+        } else if (cpfLimpo.length === 14) {
+            if (!validarCNPJ(cpfLimpo)) {
+                if (typeof showCustomModal === 'function') showCustomModal('O CNPJ informado é inválido. Verifique os números.', 'Erro de Validação');
+                else alert('CNPJ Inválido');
+                return; // BLOQUEIA O SALVAMENTO
+            }
+        } else {
+            if (typeof showCustomModal === 'function') showCustomModal('O documento deve ter 11 (CPF) ou 14 (CNPJ) números.', 'Erro de Validação');
+            else alert('Documento Inválido');
+            return; // BLOQUEIA O SALVAMENTO
+        }
+
+        // Se passou, salva no banco
         const { error: updateError } = await sbClient
             .from('usu_cadastro')
             .update({
                 NOME_USU: nome,
-                CPF_CNPJ_USU: cpf, // Envia o CPF atualizado
+                CPF_CNPJ_USU: cpfRaw,
                 END_USU: endereco
             })
             .eq('EMAIL_USU', user.email);
 
         if (updateError) {
-            console.error(updateError);
             if (typeof showCustomModal === 'function') showCustomModal('Erro ao atualizar: ' + updateError.message, 'Erro');
             return;
         }
 
-        // 2. Atualiza Senha (se preenchida)
         if (novaSenha) {
             if (novaSenha.length < 6) {
                 if (typeof showCustomModal === 'function') showCustomModal('Senha muito curta.', 'Erro');
@@ -124,10 +141,52 @@ document.addEventListener('DOMContentLoaded', async() => {
 
         if (typeof showCustomModal === 'function') await showCustomModal('Perfil atualizado com sucesso.', 'Sucesso');
 
-        // Bloqueia inputs novamente
         document.querySelectorAll('#form-perfil input[type="text"]').forEach(i => {
             i.setAttribute('readonly', true);
             i.style.borderColor = '#555';
         });
     });
 });
+
+// --- ALGORITMOS DE VALIDAÇÃO ---
+function validarCPF(cpf) {
+    if (/^(\d)\1+$/.test(cpf)) return false;
+    let soma = 0,
+        resto;
+    for (let i = 1; i <= 9; i++) soma += parseInt(cpf.substring(i - 1, i)) * (11 - i);
+    resto = (soma * 10) % 11;
+    if (resto === 10 || resto === 11) resto = 0;
+    if (resto !== parseInt(cpf.substring(9, 10))) return false;
+    soma = 0;
+    for (let i = 1; i <= 10; i++) soma += parseInt(cpf.substring(i - 1, i)) * (12 - i);
+    resto = (soma * 10) % 11;
+    if (resto === 10 || resto === 11) resto = 0;
+    if (resto !== parseInt(cpf.substring(10, 11))) return false;
+    return true;
+}
+
+function validarCNPJ(cnpj) {
+    if (/^(\d)\1+$/.test(cnpj)) return false;
+    let tamanho = cnpj.length - 2;
+    let numeros = cnpj.substring(0, tamanho);
+    let digitos = cnpj.substring(tamanho);
+    let soma = 0,
+        pos = tamanho - 7;
+    for (let i = tamanho; i >= 1; i--) {
+        soma += numeros.charAt(tamanho - i) * pos--;
+        if (pos < 2) pos = 9;
+    }
+    let resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+    if (resultado != digitos.charAt(0)) return false;
+    tamanho += 1;
+    numeros = cnpj.substring(0, tamanho);
+    soma = 0;
+    pos = tamanho - 7;
+    for (let i = tamanho; i >= 1; i--) {
+        soma += numeros.charAt(tamanho - i) * pos--;
+        if (pos < 2) pos = 9;
+    }
+    resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+    if (resultado != digitos.charAt(1)) return false;
+    return true;
+}
