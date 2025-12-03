@@ -12,21 +12,16 @@ document.addEventListener('DOMContentLoaded', async() => {
         return;
     }
 
-    // Elementos das Tabelas
     const tbodyAtivos = document.getElementById('lista-orcamentos-ativos');
     const tbodyConcluidos = document.getElementById('lista-orcamentos-concluidos');
 
-    // Mensagens de "Vazio" individuais
     const msgSemAtivos = document.getElementById('msg-sem-ativos');
     const msgSemConcluidos = document.getElementById('msg-sem-concluidos');
+    const noDataGeral = document.getElementById('no-data-message');
 
-    // Containers das tabelas (para ocultar se vazio)
     const containerAtivos = document.getElementById('container-ativos');
     const containerConcluidos = document.getElementById('container-concluidos');
-    const tableAtivos = document.getElementById('tabela-ativos');
-    const tableConcluidos = document.getElementById('tabela-concluidos');
 
-    const noDataGeral = document.getElementById('no-data-message');
     const filterSelect = document.getElementById('filtroStatus');
 
     let todosOrcamentos = [];
@@ -61,41 +56,46 @@ document.addEventListener('DOMContentLoaded', async() => {
         if (tbodyAtivos) tbodyAtivos.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Erro ao carregar.</td></tr>';
     }
 
+    // --- FUNÇÃO PRINCIPAL ---
     function distribuirOrcamentos(listaCompleta) {
+        // Limpa tabelas
         tbodyAtivos.innerHTML = '';
         tbodyConcluidos.innerHTML = '';
 
+        // Status considerados "Ativos"
         const statusAtivos = ['Não Visualizado', 'Pendente', 'Em Análise', 'Aprovado'];
 
+        // Separa os dados
         const listaAtivos = listaCompleta.filter(o => statusAtivos.includes(o.STATUS_ORCAMENTO));
-        const listaConcluidos = listaCompleta.filter(o => !statusAtivos.includes(o.STATUS_ORCAMENTO));
+        const listaConcluidos = listaCompleta.filter(o => !statusAtivos.includes(o.STATUS_ORCAMENTO)); // Concluido, Recusado, Cancelado
 
+        // Renderiza cada parte
         renderRows(tbodyAtivos, listaAtivos);
         renderRows(tbodyConcluidos, listaConcluidos);
 
-        // Lógica de Exibição
+        // Controla visibilidade das mensagens de "Vazio"
         const temAtivos = listaAtivos.length > 0;
         const temConcluidos = listaConcluidos.length > 0;
 
-        // Ativos
+        // Tabela Ativos
         if (temAtivos) {
-            tableAtivos.style.display = 'table';
+            tbodyAtivos.parentElement.parentElement.style.display = 'block'; // Mostra div .table-responsive
             msgSemAtivos.style.display = 'none';
         } else {
-            tableAtivos.style.display = 'none';
+            tbodyAtivos.parentElement.parentElement.style.display = 'none';
             msgSemAtivos.style.display = 'block';
         }
 
-        // Concluidos
+        // Tabela Concluidos
         if (temConcluidos) {
-            tableConcluidos.style.display = 'table';
+            tbodyConcluidos.parentElement.parentElement.style.display = 'block';
             msgSemConcluidos.style.display = 'none';
         } else {
-            tableConcluidos.style.display = 'none';
+            tbodyConcluidos.parentElement.parentElement.style.display = 'none';
             msgSemConcluidos.style.display = 'block';
         }
 
-        // Geral
+        // Se não tem nada em lugar nenhum
         if (!temAtivos && !temConcluidos) {
             containerAtivos.style.display = 'none';
             containerConcluidos.style.display = 'none';
@@ -107,13 +107,16 @@ document.addEventListener('DOMContentLoaded', async() => {
         }
     }
 
+    // --- RENDERIZA LINHAS ---
     function renderRows(tbody, lista) {
         lista.forEach(orc => {
             const tr = document.createElement('tr');
 
             const dataObj = new Date(orc.created_at || orc.DATA_SOLICITACAO);
             const dataFormatada = dataObj.toLocaleDateString('pt-BR');
+            const horaFormatada = dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+            // Define classe de cor baseada no status
             const statusRaw = orc.STATUS_ORCAMENTO || 'Não Visualizado';
             let statusClass = 'status-nao-visualizado';
 
@@ -126,15 +129,20 @@ document.addEventListener('DOMContentLoaded', async() => {
 
             tr.innerHTML = `
                 <td style="padding: 15px; border-bottom: 1px solid #eee;"><strong>#${orc.COD_ORCAMENTO}</strong></td>
-                <td style="padding: 15px; border-bottom: 1px solid #eee;">${dataFormatada}</td>
+                <td style="padding: 15px; border-bottom: 1px solid #eee;">
+                    <div>${dataFormatada}</div>
+                    <div style="font-size: 0.85em; color: #888; margin-top: 2px;"><i class="far fa-clock"></i> ${horaFormatada}</div>
+                </td>
                 <td style="padding: 15px; border-bottom: 1px solid #eee;">${orc.TIPO_SERVICO}</td>
                 <td style="padding: 15px; border-bottom: 1px solid #eee; text-align:center;">
-                    <button class="btn-ver-desc" style="padding: 5px 10px; background:#f0c029; border:none; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.9em; color:#1a1a1a;">
+                    <button class="btn-ver-desc" style="padding: 6px 12px; background:transparent; border:1px solid #f0c029; color:#1a1a1a; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.9em;">
                         <i class="far fa-eye"></i> Ler
                     </button>
                 </td>
-                <td style="padding: 15px; border-bottom: 1px solid #eee;">
-                    <span class="status-badge ${statusClass}">${statusRaw}</span>
+                <td style="padding: 15px; border-bottom: 1px solid #eee; text-align:center;">
+                    <span class="status-badge ${statusClass}" style="padding: 5px 10px; border-radius: 15px; color: #fff; font-size: 0.85em; font-weight: bold;">
+                        ${statusRaw}
+                    </span>
                 </td>
             `;
 
@@ -150,6 +158,7 @@ document.addEventListener('DOMContentLoaded', async() => {
         });
     }
 
+    // --- LÓGICA DE FILTRO ---
     filterSelect.addEventListener('change', (e) => {
         const filtro = e.target.value;
         if (filtro === 'Todos') {

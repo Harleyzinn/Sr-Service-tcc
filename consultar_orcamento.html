@@ -12,6 +12,19 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
+
+    <!-- CSS INLINE PARA CORRIGIR QUEBRA DE LINHA NO MODAL -->
+    <style>
+        /* Isso garante que o texto dentro do modal respeite os parágrafos */
+        
+        #modal-message {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            text-align: left;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
 </head>
 
 <body>
@@ -67,10 +80,10 @@
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Data</th>
+                                <th>Data/Hora</th>
                                 <th>Serviço</th>
                                 <th style="text-align:center;">Detalhes</th>
-                                <th>Status</th>
+                                <th style="text-align:center;">Status</th>
                             </tr>
                         </thead>
                         <tbody id="lista-orcamentos-ativos">
@@ -81,7 +94,7 @@
                 </div>
             </div>
 
-            <!-- Tabela 2: Concluídos (Necessária para o JS não quebrar) -->
+            <!-- Tabela 2: Concluídos -->
             <div id="container-concluidos">
                 <h3 class="section-title" style="border-left-color: #666; color: #555;">Histórico</h3>
                 <div class="table-responsive">
@@ -89,7 +102,7 @@
                         <thead>
                             <tr style="background-color: #333 !important;">
                                 <th style="color: #ccc;">ID</th>
-                                <th style="color: #ccc;">Data</th>
+                                <th style="color: #ccc;">Data/Hora</th>
                                 <th style="color: #ccc;">Serviço</th>
                                 <th style="text-align:center; color:#ccc;">Detalhes</th>
                                 <th style="color: #ccc;">Status</th>

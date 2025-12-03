@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meu Perfil - SR Service</title>
 
-    <!-- IMPORTANTE: style.css deve vir PRIMEIRO para carregar o modal e header -->
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="perfil.css">
 
@@ -36,48 +35,49 @@
         </div>
     </header>
 
-    <main class="profile-container">
+    <main>
         <div class="profile-card">
             <div class="profile-header">
-                <h1><i class="fas fa-user-circle"></i> Meu Perfil</h1>
-                <p>Aqui você pode visualizar e editar suas informações.</p>
+                <h1>Meu Perfil</h1>
+                <p>Gerencie suas informações pessoais</p>
             </div>
 
             <form id="form-perfil">
-                <!-- Seção de Dados Pessoais -->
-                <h3 class="section-title"><i class="fas fa-id-card"></i> Dados Pessoais</h3>
+                <h3 class="section-title"><i class="fas fa-user"></i> Dados Pessoais</h3>
                 <div class="form-grid">
-                    <div class="info-field full-width">
+                    <div class="info-field">
                         <label for="nome">Nome Completo</label>
                         <div class="input-wrapper">
-                            <input type="text" id="nome" readonly>
-                            <button type="button" class="edit-btn"><i class="fas fa-pencil-alt"></i></button>
+                            <input type="text" id="nome" readonly required minlength="5" placeholder="Nome e Sobrenome">
+                            <button type="button" class="edit-btn"><i class="fas fa-pen"></i></button>
                         </div>
                     </div>
 
                     <div class="info-field">
-                        <label for="email">E-mail</label>
-                        <input type="email" id="email" readonly style="opacity: 0.7; cursor: not-allowed;">
+                        <label for="email">E-mail (Não alterável)</label>
+                        <div class="input-wrapper">
+                            <input type="email" id="email" readonly disabled style="cursor: not-allowed; opacity: 0.7;">
+                            <button type="button" class="edit-btn" style="cursor: not-allowed; opacity: 0.5;"><i class="fas fa-lock"></i></button>
+                        </div>
                     </div>
 
                     <div class="info-field">
-                        <label for="cpf">CPF/CNPJ</label>
+                        <label for="cpf">CPF / CNPJ</label>
                         <div class="input-wrapper">
-                            <input type="text" id="cpf" readonly>
-                            <button type="button" class="edit-btn"><i class="fas fa-pencil-alt"></i></button>
+                            <input type="text" id="cpf" readonly required minlength="11" placeholder="000.000.000-00">
+                            <button type="button" class="edit-btn"><i class="fas fa-pen"></i></button>
                         </div>
                     </div>
 
                     <div class="info-field full-width">
-                        <label for="endereco">Endereço</label>
+                        <label for="endereco">Endereço Completo</label>
                         <div class="input-wrapper">
-                            <input type="text" id="endereco" readonly>
-                            <button type="button" class="edit-btn"><i class="fas fa-pencil-alt"></i></button>
+                            <input type="text" id="endereco" readonly required minlength="5" placeholder="Rua, Número, Bairro, Cidade">
+                            <button type="button" class="edit-btn"><i class="fas fa-pen"></i></button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Seção de Segurança -->
                 <h3 class="section-title" style="margin-top: 30px;"><i class="fas fa-lock"></i> Segurança</h3>
                 <div class="form-grid">
                     <div class="info-field full-width">
@@ -98,14 +98,7 @@
 
     <footer>
         <div class="container">
-            <div class="footer-logo"><img src="sr-logo-placeholder.png" alt="SR Logo"></div>
-            <div class="footer-contact">
-                <p>©SR Service Cranes and Components</p>
-                <p>tel: (xx)997000206</p>
-                <p>email: adrekzo44@gmail.com</p>
-                <p>CEP: 18890-762</p>
-            </div>
-            <div class="footer-social"><a href="#"><i class="fab fa-whatsapp"></i></a><a href="#"><i class="fab fa-instagram"></i></a><a href="#"><i class="fab fa-linkedin-in"></i></a></div>
+            <!-- Rodapé injetado pelo script.js -->
         </div>
     </footer>
 

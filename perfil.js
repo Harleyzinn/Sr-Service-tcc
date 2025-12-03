@@ -13,10 +13,12 @@ document.addEventListener('DOMContentLoaded', async() => {
         if (value.length > 14) value = value.slice(0, 14);
 
         if (value.length <= 11) {
+            // Máscara CPF
             value = value.replace(/(\d{3})(\d)/, "$1.$2");
             value = value.replace(/(\d{3})(\d)/, "$1.$2");
             value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
         } else {
+            // Máscara CNPJ
             value = value.replace(/^(\d{2})(\d)/, "$1.$2");
             value = value.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
             value = value.replace(/\.(\d{3})(\d)/, ".$1/$2");
@@ -70,39 +72,55 @@ document.addEventListener('DOMContentLoaded', async() => {
         });
     });
 
-    // --- SALVAR (COM VALIDAÇÃO) ---
+    // --- SALVAR (COM VALIDAÇÃO RIGOROSA) ---
     const form = document.getElementById('form-perfil');
     form.addEventListener('submit', async(e) => {
         e.preventDefault();
 
-        const nome = document.getElementById('nome').value;
-        const cpfRaw = document.getElementById('cpf').value;
-        const endereco = document.getElementById('endereco').value;
+        const nome = document.getElementById('nome').value.trim();
+        const cpfRaw = document.getElementById('cpf').value.trim();
+        const endereco = document.getElementById('endereco').value.trim();
         const novaSenha = document.getElementById('nova_senha').value;
         const confirmaSenha = document.getElementById('confirma_senha').value;
 
-        // >>> VALIDAÇÃO DE CPF/CNPJ (NOVO) <<<
+        // 1. VALIDAÇÃO DE CAMPOS VAZIOS
+        if (!nome || !cpfRaw || !endereco) {
+            if (typeof showCustomModal === 'function') showCustomModal('Todos os campos (Nome, CPF e Endereço) são obrigatórios e não podem ficar em branco.', 'Dados Incompletos');
+            else alert('Preencha todos os campos.');
+            return;
+        }
+
+        // 2. VALIDAÇÃO DE NOME REAL (Mínimo 2 palavras)
+        if (nome.split(' ').length < 2) {
+            if (typeof showCustomModal === 'function') showCustomModal('Por favor, insira seu nome completo (Nome e Sobrenome).', 'Nome Inválido');
+            return;
+        }
+
+        // 3. VALIDAÇÃO DE ENDEREÇO REAL (Mínimo de caracteres)
+        if (endereco.length < 5) {
+            if (typeof showCustomModal === 'function') showCustomModal('O endereço inserido parece incompleto. Detalhe rua, número e bairro.', 'Endereço Inválido');
+            return;
+        }
+
+        // 4. VALIDAÇÃO DE CPF/CNPJ MATEMÁTICA
         const cpfLimpo = cpfRaw.replace(/\D/g, '');
 
         if (cpfLimpo.length === 11) {
             if (!validarCPF(cpfLimpo)) {
-                if (typeof showCustomModal === 'function') showCustomModal('O CPF informado é inválido. Verifique os números.', 'Erro de Validação');
-                else alert('CPF Inválido');
-                return; // BLOQUEIA O SALVAMENTO
+                if (typeof showCustomModal === 'function') showCustomModal('O CPF informado é inválido. Verifique os números.', 'CPF Inválido');
+                return;
             }
         } else if (cpfLimpo.length === 14) {
             if (!validarCNPJ(cpfLimpo)) {
-                if (typeof showCustomModal === 'function') showCustomModal('O CNPJ informado é inválido. Verifique os números.', 'Erro de Validação');
-                else alert('CNPJ Inválido');
-                return; // BLOQUEIA O SALVAMENTO
+                if (typeof showCustomModal === 'function') showCustomModal('O CNPJ informado é inválido.', 'CNPJ Inválido');
+                return;
             }
         } else {
-            if (typeof showCustomModal === 'function') showCustomModal('O documento deve ter 11 (CPF) ou 14 (CNPJ) números.', 'Erro de Validação');
-            else alert('Documento Inválido');
-            return; // BLOQUEIA O SALVAMENTO
+            if (typeof showCustomModal === 'function') showCustomModal('O documento deve ter 11 (CPF) ou 14 (CNPJ) dígitos.', 'Documento Inválido');
+            return;
         }
 
-        // Se passou, salva no banco
+        // Se passou em tudo, salva no banco
         const { error: updateError } = await sbClient
             .from('usu_cadastro')
             .update({
@@ -119,11 +137,11 @@ document.addEventListener('DOMContentLoaded', async() => {
 
         if (novaSenha) {
             if (novaSenha.length < 6) {
-                if (typeof showCustomModal === 'function') showCustomModal('Senha muito curta.', 'Erro');
+                if (typeof showCustomModal === 'function') showCustomModal('A nova senha deve ter no mínimo 6 caracteres.', 'Senha Curta');
                 return;
             }
             if (novaSenha !== confirmaSenha) {
-                if (typeof showCustomModal === 'function') showCustomModal('Senhas não coincidem.', 'Erro');
+                if (typeof showCustomModal === 'function') showCustomModal('As novas senhas não coincidem.', 'Erro de Senha');
                 return;
             }
 
