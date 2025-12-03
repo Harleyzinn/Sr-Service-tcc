@@ -1,181 +1,323 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const sbClient = window.supabase;
+document.addEventListener('DOMContentLoaded', async() => {
+    injectCustomModalHTML();
+    injectLoginModalHTML();
+    await setupHeader();
+    updateFooter();
 
-    if (!sbClient || !sbClient.auth) {
-        console.error('Erro CRÍTICO: Cliente Supabase não encontrado.');
-        if (typeof showCustomModal === 'function') showCustomModal('Erro de sistema: Conexão falhou.', 'Erro Fatal');
-        return;
-    }
-
-    // --- MÁSCARAS (Mantidas) ---
-    const cpfInput = document.getElementById('cpf');
-    const telInput = document.getElementById('tel');
-
-    if (cpfInput) {
-        cpfInput.addEventListener('input', (e) => {
-            let value = e.target.value.replace(/\D/g, "");
-            if (value.length > 14) value = value.slice(0, 14);
-            if (value.length <= 11) {
-                value = value.replace(/(\d{3})(\d)/, "$1.$2");
-                value = value.replace(/(\d{3})(\d)/, "$1.$2");
-                value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-            } else {
-                value = value.replace(/^(\d{2})(\d)/, "$1.$2");
-                value = value.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
-                value = value.replace(/\.(\d{3})(\d)/, ".$1/$2");
-                value = value.replace(/(\d{4})(\d{1,2})$/, "$1-$2");
+    const hash = window.location.hash;
+    if (hash) {
+        if (hash.includes('type=recovery')) {
+            if (!window.location.pathname.includes('recuperar_senha.html')) {
+                window.location.href = 'recuperar_senha.html' + hash;
             }
-            e.target.value = value;
-        });
-    }
-
-    if (telInput) {
-        telInput.addEventListener('input', (e) => {
-            let value = e.target.value.replace(/\D/g, "");
-            if (value.length > 11) value = value.slice(0, 11);
-            if (value.length > 10) {
-                value = value.replace(/^(\d{2})(\d)/, "($1) $2");
-                value = value.replace(/(\d{5})(\d)/, "$1-$2");
-            } else {
-                value = value.replace(/^(\d{2})(\d)/, "($1) $2");
-                value = value.replace(/(\d{4})(\d)/, "$1-$2");
-            }
-            e.target.value = value;
-        });
-    }
-
-    // --- SUBMISSÃO ---
-    const form = document.getElementById('form-cadastro');
-    if (form) {
-        form.addEventListener('submit', async(e) => {
-            e.preventDefault();
-
-            const nome = document.getElementById('nome').value.trim();
-            const email = document.getElementById('email').value.trim();
-            const senha = document.getElementById('senha').value;
-            const confirmSenha = document.getElementById('confirmSenha').value;
-            const cpfRaw = document.getElementById('cpf').value;
-            const telRaw = document.getElementById('tel').value;
-            const endereco = document.getElementById('endereco').value.trim();
-
-            if (senha !== confirmSenha) return showCustomModal('As senhas não conferem.', 'Erro');
-            if (senha.length < 6) return showCustomModal('A senha deve ter no mínimo 6 caracteres.', 'Erro');
-
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) return showCustomModal('E-mail inválido.', 'Erro');
-
-            const telLimpo = telRaw.replace(/\D/g, '');
-            if (telLimpo.length < 10 || telLimpo.length > 11) return showCustomModal('Telefone inválido.', 'Erro');
-
-            const docLimpo = cpfRaw.replace(/\D/g, '');
-            if (docLimpo.length === 11) {
-                if (!validarCPF(docLimpo)) return showCustomModal('CPF inválido.', 'Erro');
-            } else if (docLimpo.length === 14) {
-                if (!validarCNPJ(docLimpo)) return showCustomModal('CNPJ inválido.', 'Erro');
-            } else {
-                return showCustomModal('Documento inválido.', 'Erro');
-            }
-
-            const btn = form.querySelector('button[type="submit"]');
-            const originalText = btn.innerText;
-            btn.disabled = true;
-            btn.innerText = 'Cadastrando...';
-
-            try {
-                // LÓGICA DE URL DINÂMICA
-                // Pega a URL atual (seja localhost ou github) e remove o nome do arquivo atual
-                // Ex: http://127.0.0.1:5500/cadastro.html vira http://127.0.0.1:5500/
-                let baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
-
-                // Se a URL não terminar com /, adiciona (para garantir)
-                if (!baseUrl.endsWith('/')) baseUrl += '/';
-
-                // 1. Cria usuário no Auth
-                const { data: authData, error: authError } = await sbClient.auth.signUp({
-                    email: email,
-                    password: senha,
-                    options: {
-                        // Redireciona para a home do mesmo lugar onde o usuário está agora
-                        emailRedirectTo: baseUrl + 'index.html'
-                    }
-                });
-
-                if (authError) throw new Error(authError.message);
-
-                if (authData.user && authData.user.identities && authData.user.identities.length === 0) {
-                    throw new Error('Este e-mail já está cadastrado.');
-                }
-
-                // 2. Salva perfil no Banco
-                if (authData.user) {
-                    const { error: insertError } = await sbClient.from('usu_cadastro').insert({
-                        NOME_USU: nome,
-                        EMAIL_USU: email,
-                        SENHA_USU: '********',
-                        END_USU: endereco,
-                        CPF_CNPJ_USU: cpfRaw,
-                        TEL_USU: telLimpo,
-                        admin: 0
-                    });
-
-                    if (insertError) console.error('Erro ao salvar dados:', insertError);
-
-                    await showCustomModal('Cadastro realizado! Verifique seu e-mail para confirmar.', 'Sucesso');
-                    window.location.href = 'index.html';
-                }
-
-            } catch (error) {
-                console.error(error);
-                let msg = error.message;
-                if (msg.includes('already registered')) msg = 'Este e-mail já está em uso.';
-                await showCustomModal(msg, 'Erro no Cadastro');
-            } finally {
-                btn.disabled = false;
-                btn.innerText = originalText;
-            }
-        });
+        } else if (hash.includes('error=access_denied') && hash.includes('otp_expired')) {
+            history.replaceState(null, null, window.location.pathname);
+            setTimeout(() => {
+                showCustomModal('Este link de confirmação já foi utilizado ou expirou. Tente fazer login normalmente.', 'Link Expirado');
+            }, 1000);
+        }
     }
 });
 
-// Funções de Validação (Mantidas)
-function validarCPF(cpf) {
-    if (/^(\d)\1+$/.test(cpf)) return false;
-    let soma = 0,
-        resto;
-    for (let i = 1; i <= 9; i++) soma += parseInt(cpf.substring(i - 1, i)) * (11 - i);
-    resto = (soma * 10) % 11;
-    if (resto === 10 || resto === 11) resto = 0;
-    if (resto !== parseInt(cpf.substring(9, 10))) return false;
-    soma = 0;
-    for (let i = 1; i <= 10; i++) soma += parseInt(cpf.substring(i - 1, i)) * (12 - i);
-    resto = (soma * 10) % 11;
-    if (resto === 10 || resto === 11) resto = 0;
-    if (resto !== parseInt(cpf.substring(10, 11))) return false;
-    return true;
+// --- CONFIGURAÇÃO DO CABEÇALHO ---
+async function setupHeader() {
+    const loginArea = document.querySelector('.login-area');
+    if (!loginArea) return;
+
+    const sbClient = window.supabase;
+    if (!sbClient || !sbClient.auth) return;
+
+    const { data: { user } } = await sbClient.auth.getUser();
+
+    if (user) {
+        let primeiroNome = 'Minha Conta';
+        let isAdmin = false;
+
+        try {
+            const { data: perfil } = await sbClient
+                .from('usu_cadastro')
+                .select('NOME_USU, admin')
+                .eq('EMAIL_USU', user.email)
+                .single();
+
+            if (perfil) {
+                if (perfil.NOME_USU) primeiroNome = perfil.NOME_USU.split(' ')[0];
+                if (perfil.admin === 1) isAdmin = true;
+            }
+        } catch (error) { console.log('Erro perfil'); }
+
+        let buttonsHTML = '';
+
+        if (isAdmin) {
+            buttonsHTML += `
+                <a href="admin.html" style="background-color: #333; color: #f0c029; border: 1px solid #f0c029; padding: 6px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.9em; margin-right: 15px; transition: 0.3s; display: inline-flex; align-items: center; gap: 6px;" onmouseover="this.style.backgroundColor='#f0c029'; this.style.color='#000';" onmouseout="this.style.backgroundColor='#333'; this.style.color='#f0c029';">
+                    <i class="fas fa-user-shield"></i> Painel de Admin
+                </a>
+            `;
+        } else {
+            buttonsHTML += `
+                <a href="consultar_orcamento.html" style="background-color: #333; color: #f0c029; border: 1px solid #f0c029; padding: 6px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.9em; margin-right: 15px; transition: 0.3s; display: inline-flex; align-items: center; gap: 6px;" onmouseover="this.style.backgroundColor='#f0c029'; this.style.color='#000';" onmouseout="this.style.backgroundColor='#333'; this.style.color='#f0c029';">
+                    <i class="fas fa-list-ul"></i> Meus Orçamentos
+                </a>
+            `;
+        }
+
+        buttonsHTML += `
+            <a href="perfil.html" class="btn-user-logged" style="color: #f0c029; text-decoration: none; margin-right: 15px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;">
+                <i class="fas fa-user-circle"></i> ${primeiroNome}
+            </a>
+            <button id="btn-logout" style="background: transparent; border: 1px solid #666; color: #ccc; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                Sair <i class="fas fa-sign-out-alt"></i>
+            </button>
+        `;
+
+        loginArea.innerHTML = buttonsHTML;
+
+        document.getElementById('btn-logout').addEventListener('click', async() => {
+            await sbClient.auth.signOut();
+            window.location.href = 'index.html';
+        });
+
+    } else {
+        loginArea.innerHTML = `
+            <a href="#" id="btn-open-login" style="color: #fff; text-decoration: none; margin-right: 15px; font-weight: 500;">Entrar</a>
+            <a href="cadastro.html" class="btn-cta" style="background-color: #f0c029; color: #1a1a1a; padding: 8px 15px; border-radius: 4px; text-decoration: none; font-weight: bold;">Criar Conta</a>
+        `;
+
+        const btnOpenLogin = document.getElementById('btn-open-login');
+        if (btnOpenLogin) {
+            btnOpenLogin.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('login-modal').style.display = 'flex';
+            });
+        }
+    }
 }
 
-function validarCNPJ(cnpj) {
-    if (/^(\d)\1+$/.test(cnpj)) return false;
-    let tamanho = cnpj.length - 2;
-    let numeros = cnpj.substring(0, tamanho);
-    let digitos = cnpj.substring(tamanho);
-    let soma = 0,
-        pos = tamanho - 7;
-    for (let i = tamanho; i >= 1; i--) {
-        soma += numeros.charAt(tamanho - i) * pos--;
-        if (pos < 2) pos = 9;
+// --- RECUPERAÇÃO DE SENHA (COM VERIFICAÇÃO DE EMAIL) ---
+async function handleForgotPassword() {
+    const email = await showCustomModal("Digite seu e-mail para receber o link de recuperação:", "Recuperar Senha", true);
+
+    if (email) {
+        const sbClient = window.supabase;
+
+        // 1. VERIFICA SE O EMAIL EXISTE NO BANCO DE DADOS
+        // Se não existir na tabela usu_cadastro, não adianta enviar link
+        const { data: userExists, error: searchError } = await sbClient
+            .from('usu_cadastro')
+            .select('EMAIL_USU')
+            .eq('EMAIL_USU', email)
+            .maybeSingle();
+
+        if (searchError) {
+            console.error("Erro ao buscar email:", searchError);
+            showCustomModal("Erro ao verificar e-mail. Tente novamente.", "Erro");
+            return;
+        }
+
+        if (!userExists) {
+            showCustomModal("Este e-mail não está cadastrado em nosso sistema.", "E-mail não encontrado");
+            return; // Bloqueia o envio
+        }
+
+        // 2. Se existe, prossegue com o envio
+        let redirectUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/')) + '/recuperar_senha.html';
+
+        const { error } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
+
+        if (error) {
+            showCustomModal("Erro ao enviar: " + error.message, "Erro");
+        } else {
+            showCustomModal("Link de recuperação enviado! Verifique seu e-mail (inclusive spam).", "Sucesso");
+        }
     }
-    let resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
-    if (resultado != digitos.charAt(0)) return false;
-    tamanho += 1;
-    numeros = cnpj.substring(0, tamanho);
-    soma = 0;
-    pos = tamanho - 7;
-    for (let i = tamanho; i >= 1; i--) {
-        soma += numeros.charAt(tamanho - i) * pos--;
-        if (pos < 2) pos = 9;
+}
+
+// --- MODAL DE LOGIN ---
+function injectLoginModalHTML() {
+    if (document.getElementById('login-modal')) return;
+
+    const modalHTML = `
+    <div id="login-modal" class="modal-overlay" style="display: none; z-index: 10000;">
+        <div class="modal-content login-content" style="max-width: 350px; text-align: center; background: #222; border: 1px solid #f0c029; padding: 30px; border-radius: 8px;">
+            <div class="modal-header" style="border-bottom: 1px solid #444; margin-bottom: 20px; padding-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin: 0; color: #f0c029;">Acessar Conta</h3>
+                <span class="modal-close" id="close-login" style="cursor:pointer; color:#fff; font-size:1.5em;">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="form-login-modal">
+                    <div style="margin-bottom: 15px; text-align: left;">
+                        <label style="color: #ccc; font-size: 0.9em;">E-mail</label>
+                        <input type="email" id="email-login" required style="width: 100%; padding: 10px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px; margin-top: 5px; box-sizing: border-box;">
+                    </div>
+                    <div style="margin-bottom: 20px; text-align: left;">
+                        <label style="color: #ccc; font-size: 0.9em;">Senha</label>
+                        <input type="password" id="senha-login" required style="width: 100%; padding: 10px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px; margin-top: 5px; box-sizing: border-box;">
+                    </div>
+                    <button type="submit" style="width: 100%; padding: 12px; background: #f0c029; color: #000; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; transition: background 0.3s;" onmouseover="this.style.backgroundColor='#d4a910'" onmouseout="this.style.backgroundColor='#f0c029'">ENTRAR</button>
+                </form>
+                <div style="margin-top: 15px; font-size: 0.9em;">
+                    <a href="#" id="link-esqueci-senha" style="color: #f0c029; text-decoration: none;">Esqueci minha senha</a>
+                    <br><br>
+                    <span style="color: #888;">Não tem conta?</span> <a href="cadastro.html" style="color: #fff; text-decoration: underline;">Cadastre-se</a>
+                </div>
+            </div>
+        </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    document.getElementById('close-login').addEventListener('click', () => {
+        document.getElementById('login-modal').style.display = 'none';
+    });
+
+    window.addEventListener('click', (e) => {
+        const modal = document.getElementById('login-modal');
+        if (e.target === modal) modal.style.display = 'none';
+    });
+
+    document.getElementById('link-esqueci-senha').addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('login-modal').style.display = 'none';
+        handleForgotPassword();
+    });
+
+    document.getElementById('form-login-modal').addEventListener('submit', async(e) => {
+        e.preventDefault();
+        const email = document.getElementById('email-login').value;
+        const password = document.getElementById('senha-login').value;
+        const btn = e.target.querySelector('button');
+
+        const originalText = btn.innerText;
+        btn.innerText = 'Verificando...';
+        btn.disabled = true;
+
+        const sbClient = window.supabase;
+        const { error } = await sbClient.auth.signInWithPassword({ email, password });
+
+        if (error) {
+            showCustomModal('E-mail ou senha incorretos.', 'Erro de Login');
+            btn.innerText = originalText;
+            btn.disabled = false;
+        } else {
+            window.location.reload();
+        }
+    });
+}
+
+// --- MODAL CUSTOMIZADO ---
+function injectCustomModalHTML() {
+    if (!document.getElementById('custom-modal')) {
+        const modalHTML = `
+        <div id="custom-modal" class="modal-overlay" style="display: none; z-index: 11000;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modal-title">Aviso</h3>
+                    <span class="modal-close-custom">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <p id="modal-message" style="line-height: 1.6;"></p>
+                    <input type="email" id="modal-input" placeholder="Seu e-mail..." style="display: none; width: 100%; margin-top: 15px; padding: 10px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px;">
+                </div>
+                <div class="modal-footer">
+                    <button id="modal-ok-btn">OK</button>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; }
+            .modal-content { background: #1a1a1a; border: 1px solid #f0c029; color: #fff; padding: 25px; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); animation: fadeIn 0.3s; }
+            .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
+            .modal-header h3 { color: #f0c029; margin: 0; font-size: 1.4em; }
+            .modal-close-custom { cursor: pointer; font-size: 1.5em; color: #666; transition: 0.2s; }
+            .modal-close-custom:hover { color: #fff; }
+            .modal-footer { margin-top: 25px; text-align: right; }
+            #modal-ok-btn { background: #f0c029; border: none; padding: 10px 25px; color: #1a1a1a; font-weight: bold; cursor: pointer; border-radius: 4px; transition: 0.2s; }
+            #modal-ok-btn:hover { background: #d4a910; }
+            @keyframes fadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        `;
+        document.head.appendChild(style);
+
+        document.querySelector('.modal-close-custom').addEventListener('click', () => {
+            document.getElementById('custom-modal').style.display = 'none';
+        });
     }
-    resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
-    if (resultado != digitos.charAt(1)) return false;
-    return true;
+}
+
+window.showCustomModal = function(message, title = 'Aviso', hasInput = false) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('custom-modal');
+        document.getElementById('modal-title').innerText = title;
+        document.getElementById('modal-message').innerText = message;
+
+        const input = document.getElementById('modal-input');
+        const btn = document.getElementById('modal-ok-btn');
+        const closeBtn = document.querySelector('.modal-close-custom');
+
+        if (hasInput) {
+            input.style.display = 'block';
+            input.value = '';
+            input.focus();
+        } else {
+            input.style.display = 'none';
+        }
+
+        modal.style.display = 'flex';
+
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+
+        const close = () => {
+            modal.style.display = 'none';
+            if (hasInput) resolve(input.value);
+            else resolve(true);
+        };
+
+        newBtn.addEventListener('click', close);
+        closeBtn.onclick = close;
+        modal.onclick = (e) => { if (e.target === modal) close(); };
+    });
+};
+
+function updateFooter() {
+    const footerContainer = document.querySelector('footer .container');
+    if (footerContainer) {
+        footerContainer.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; flex-wrap: wrap; gap: 20px;">
+                <div class="footer-col" style="flex: 1; min-width: 200px; text-align: left;">
+                    <h4 style="color: #f0c029; margin-bottom: 15px; text-transform: uppercase; font-size: 0.9em; border-bottom: 1px solid #444; display: inline-block; padding-bottom: 5px;">SR Service</h4>
+                    <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;">CNPJ: 00.000.000/0001-00</p>
+                    <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;">Brasílio Custódio de Camargo, 109</p>
+                    <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;">CEP: 18890-762</p>
+                    <p style="margin: 15px 0 0 0; color: #777; font-size: 0.8em;">&copy; 2025 Todos os direitos reservados.</p>
+                </div>
+
+                <div class="footer-col" style="flex: 1; min-width: 200px; text-align: center;">
+                    <h4 style="color: #f0c029; margin-bottom: 15px; text-transform: uppercase; font-size: 0.9em;">Mapa do Site</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0; line-height: 2;">
+                        <li><a href="index.html" style="color: #ccc; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#f0c029'" onmouseout="this.style.color='#ccc'">Início</a></li>
+                        <li><a href="servicos.html" style="color: #ccc; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#f0c029'" onmouseout="this.style.color='#ccc'">Serviços</a></li>
+                        <li><a href="sobre_nos.html" style="color: #ccc; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#f0c029'" onmouseout="this.style.color='#ccc'">Sobre Nós</a></li>
+                        <li><a href="orcamento.html" style="color: #ccc; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#f0c029'" onmouseout="this.style.color='#ccc'">Solicitar Orçamento</a></li>
+                         <li><a href="politica_privacidade.html" style="color: #ccc; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#f0c029'" onmouseout="this.style.color='#ccc'">Política de Privacidade</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-col" style="flex: 1; min-width: 200px; text-align: right;">
+                    <h4 style="color: #f0c029; margin-bottom: 15px; text-transform: uppercase; font-size: 0.9em; border-bottom: 1px solid #444; display: inline-block; padding-bottom: 5px;">Contato</h4>
+                    <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;"><i class="fas fa-phone" style="margin-right:8px; color:#f0c029;"></i> (14) 99700-0206</p>
+                    <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;"><i class="fas fa-envelope" style="margin-right:8px; color:#f0c029;"></i> adrekzo44@gmail.com</p>
+                    
+                    <div class="footer-social" style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 15px;">
+                        <a href="https://wa.me/5514997000206" target="_blank" style="color: #f0c029; font-size: 1.5em; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#f0c029'"><i class="fab fa-whatsapp"></i></a>
+                        <a href="https://www.instagram.com/styvezatto/" target="_blank" style="color: #f0c029; font-size: 1.5em; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#f0c029'"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.linkedin.com/in/adrian-ezequiel-5720503a0/" target="_blank" style="color: #f0c029; font-size: 1.5em; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#f0c029'"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 }
