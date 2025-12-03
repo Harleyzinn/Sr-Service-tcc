@@ -40,12 +40,12 @@ document.addEventListener('DOMContentLoaded', async() => {
     const tbody = document.getElementById('orcamentos-tbody');
     const filterSelect = document.getElementById('filterStatus');
 
-    // --- FUNÇÃO PARA BUSCAR DADOS ---
+    // --- FUNÇÃO PARA BUSCAR DADOS (Otimizada) ---
     async function fetchOrcamentos() {
         try {
             tbody.innerHTML = '<tr><td colspan="7" class="loading-text" style="text-align:center; padding:20px;">Carregando pedidos...</td></tr>';
 
-            // 1. Busca os orçamentos
+            // 1. Busca os orçamentos (Limitando a 50 para evitar travamento inicial se tiver muitos)
             const { data: orcamentos, error: orcError } = await sbClient
                 .from('tb_orcamento')
                 .select('*')
@@ -53,33 +53,44 @@ document.addEventListener('DOMContentLoaded', async() => {
 
             if (orcError) throw orcError;
 
-            // 2. Busca dados complementares dos usuários (Manual Join)
-            // Isso evita erros se a Foreign Key não estiver configurada no banco
-            const orcamentosCompletos = await Promise.all(orcamentos.map(async(orc) => {
-                let dadosUsuario = { END_USU: 'Não encontrado', TEL_USU: '' };
+            if (!orcamentos || orcamentos.length === 0) {
+                renderTable([]);
+                return;
+            }
 
-                if (orc.fk_cod_usuario) {
-                    const { data: userDetails } = await sbClient
-                        .from('usu_cadastro')
-                        .select('END_USU, TEL_USU')
-                        .eq('COD_USUARIO', orc.fk_cod_usuario)
-                        .single();
+            // 2. Coleta IDs únicos de usuários para buscar de uma vez (BATCH FETCH)
+            // Isso é MUITO mais rápido que fazer um loop com await
+            const userIds = [...new Set(orcamentos.map(o => o.fk_cod_usuario).filter(id => id))];
 
-                    if (userDetails) {
-                        dadosUsuario = userDetails;
-                    }
+            let mapaUsuarios = {};
+
+            if (userIds.length > 0) {
+                const { data: usuarios, error: userError } = await sbClient
+                    .from('usu_cadastro')
+                    .select('COD_USUARIO, END_USU, TEL_USU')
+                    .in('COD_USUARIO', userIds);
+
+                if (!userError && usuarios) {
+                    // Cria um mapa para acesso rápido: { 1: {endereco...}, 2: {endereco...} }
+                    mapaUsuarios = usuarios.reduce((acc, u) => {
+                        acc[u.COD_USUARIO] = u;
+                        return acc;
+                    }, {});
                 }
+            }
 
-                // Anexa os dados do usuário ao objeto do orçamento
-                return {...orc, usu_cadastro: dadosUsuario };
-            }));
+            // 3. Monta o objeto final
+            const orcamentosCompletos = orcamentos.map(orc => {
+                const dadosUser = mapaUsuarios[orc.fk_cod_usuario] || { END_USU: 'Não encontrado', TEL_USU: '' };
+                return {...orc, usu_cadastro: dadosUser };
+            });
 
             todosOrcamentos = orcamentosCompletos;
             renderTable(todosOrcamentos);
 
         } catch (error) {
-            console.error('Erro ao buscar orçamentos:', error);
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red; padding:20px;">Erro ao carregar dados. Verifique o console.</td></tr>';
+            console.error('Erro FATAL ao buscar orçamentos:', error);
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red; padding:20px;">Erro ao carregar dados: ${error.message}</td></tr>`;
         }
     }
 
@@ -106,10 +117,9 @@ document.addEventListener('DOMContentLoaded', async() => {
             const clienteEmpresa = orc.NOME_EMPRESA ? `(${orc.NOME_EMPRESA})` : '';
             const clienteEmail = orc.EMAIL_CONTATO || 'Sem e-mail';
 
-            // CORREÇÃO AQUI: Sintaxe ?. (junto)
+            // Dados vindos do mapa de usuários
             const clienteEndereco = orc.usu_cadastro ? .END_USU || 'Endereço não disponível';
             const clienteTelBanco = orc.usu_cadastro ? .TEL_USU;
-
             const clienteTelOrcamento = orc.TELEFONE_CONTATO;
 
             // Prioriza telefone do pedido
