@@ -37,57 +37,86 @@
         </div>
     </header>
 
-    <main>
-        <div class="container" style="padding-top: 140px; padding-bottom: 60px; min-height: 80vh;">
+    <main class="main-wrapper">
+        <div class="content-card wide-card">
 
-            <!-- Cabeçalho Simples -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 20px;">
-                <h1 style="color: #1a1a1a; font-family: 'RopaSans-Regular', sans-serif; margin: 0;">Meus Orçamentos</h1>
+            <div class="card-header">
+                <h1>Meus Orçamentos</h1>
+                <p>Gerencie suas solicitações e veja o histórico</p>
+            </div>
 
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <!-- Botão Novo Pedido -->
-                    <a href="orcamento.html" style="background-color: #f0c029; color: #1a1a1a; padding: 10px 20px; border-radius: 4px; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;">
+            <!-- Controles (Botão e Filtro) -->
+            <div class="secondary-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+                <div class="action-left">
+                    <a href="orcamento.html" class="btn-novo-orcamento" style="background-color: #f0c029; color: #1a1a1a; padding: 10px 20px; border-radius: 4px; text-decoration: none; font-weight: bold;">
                         <i class="fas fa-plus"></i> Novo Pedido
                     </a>
+                </div>
 
-                    <!-- Filtro Solicitado -->
-                    <div class="filter-box" style="display: flex; align-items: center; gap: 10px;">
-                        <label for="filtroStatus" style="font-weight: bold; color: #555;">Filtrar:</label>
-                        <select id="filtroStatus" style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-                            <option value="Todos">Todos</option>
-                            <option value="Não Visualizado">Não Visualizado</option>
-                            <option value="Pendente">Pendente</option>
-                            <option value="Concluido">Concluído</option>
-                        </select>
-                    </div>
+                <div class="filter-right" style="display: flex; align-items: center; gap: 10px;">
+                    <label for="filtroStatus" style="font-weight: bold; color: #555;">Filtrar:</label>
+                    <select id="filtroStatus" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <option value="Todos">Todos</option>
+                        <option value="Não Visualizado">Não Visualizado</option>
+                        <option value="Pendente">Pendente</option>
+                        <option value="Concluido">Concluído</option>
+                    </select>
                 </div>
             </div>
 
-            <!-- Tabela de Orçamentos -->
-            <div id="tabela-ativos">
-                <table class="data-table" style="width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                    <thead>
-                        <tr style="background-color: #1a1a1a; color: #f0c029;">
-                            <th style="padding: 15px; text-align: left;">ID</th>
-                            <th style="padding: 15px; text-align: left;">Data</th>
-                            <th style="padding: 15px; text-align: left;">Serviço</th>
-                            <th style="padding: 15px; text-align: center;">Detalhes</th>
-                            <th style="padding: 15px; text-align: left;">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lista-orcamentos-ativos">
-                        <tr>
-                            <td colspan="5" style="padding: 20px; text-align: center; color: #666;">Carregando histórico...</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- TABELA 1: EM ANDAMENTO -->
+            <div id="container-ativos" style="margin-bottom: 40px;">
+                <h3 class="section-title" style="color: #1a1a1a; border-left: 4px solid #f0c029; padding-left: 10px; margin-bottom: 15px;">
+                    <i class="fas fa-clock"></i> Solicitações em Andamento
+                </h3>
+                <div class="table-responsive">
+                    <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background-color: #1a1a1a; color: #f0c029;">
+                                <th style="padding: 15px;">ID</th>
+                                <th style="padding: 15px;">Data</th>
+                                <th style="padding: 15px;">Serviço</th>
+                                <th style="padding: 15px; text-align: center;">Detalhes</th>
+                                <th style="padding: 15px;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-orcamentos-ativos">
+                            <!-- JS preenche aqui -->
+                        </tbody>
+                    </table>
+                    <p id="msg-sem-ativos" style="display:none; text-align: center; color: #777; padding: 20px; background: #f9f9f9;">Nenhuma solicitação em andamento.</p>
+                </div>
             </div>
 
-            <!-- Mensagem de "Sem dados" -->
-            <div id="no-data-message" class="no-data" style="display: none; text-align: center; margin-top: 50px; color: #888;">
+            <!-- TABELA 2: HISTÓRICO -->
+            <div id="container-concluidos">
+                <h3 class="section-title" style="color: #1a1a1a; border-left: 4px solid #333; padding-left: 10px; margin-bottom: 15px;">
+                    <i class="fas fa-history"></i> Histórico (Concluídos/Recusados)
+                </h3>
+                <div class="table-responsive">
+                    <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background-color: #333; color: #ccc;">
+                                <th style="padding: 15px;">ID</th>
+                                <th style="padding: 15px;">Data</th>
+                                <th style="padding: 15px;">Serviço</th>
+                                <th style="padding: 15px; text-align: center;">Detalhes</th>
+                                <th style="padding: 15px;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-orcamentos-concluidos">
+                            <!-- JS preenche aqui -->
+                        </tbody>
+                    </table>
+                    <p id="msg-sem-concluidos" style="display:none; text-align: center; color: #777; padding: 20px; background: #f9f9f9;">Nenhum histórico encontrado.</p>
+                </div>
+            </div>
+
+            <!-- Mensagem Geral de Sem Dados -->
+            <div id="no-data-message" class="no-data" style="display: none; text-align: center; padding: 40px; color: #888;">
                 <div style="font-size: 3em; margin-bottom: 15px; color: #ddd;"><i class="fas fa-folder-open"></i></div>
                 <h3>Nenhum orçamento encontrado</h3>
-                <p>Você ainda não solicitou nenhum serviço conosco.</p>
+                <p>Seus pedidos aparecerão aqui.</p>
             </div>
 
         </div>
