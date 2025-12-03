@@ -43,9 +43,9 @@ document.addEventListener('DOMContentLoaded', async() => {
     // --- FUNÇÃO PARA BUSCAR DADOS (Otimizada) ---
     async function fetchOrcamentos() {
         try {
-            tbody.innerHTML = '<tr><td colspan="7" class="loading-text" style="text-align:center; padding:20px;">Carregando pedidos...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="loading-text" style="text-align:center; padding:20px; color:#f0c029;">Carregando pedidos...</td></tr>';
 
-            // 1. Busca os orçamentos (Limitando a 50 para evitar travamento inicial se tiver muitos)
+            // 1. Busca os orçamentos
             const { data: orcamentos, error: orcError } = await sbClient
                 .from('tb_orcamento')
                 .select('*')
@@ -59,7 +59,6 @@ document.addEventListener('DOMContentLoaded', async() => {
             }
 
             // 2. Coleta IDs únicos de usuários para buscar de uma vez (BATCH FETCH)
-            // Isso é MUITO mais rápido que fazer um loop com await
             const userIds = [...new Set(orcamentos.map(o => o.fk_cod_usuario).filter(id => id))];
 
             let mapaUsuarios = {};
@@ -117,9 +116,10 @@ document.addEventListener('DOMContentLoaded', async() => {
             const clienteEmpresa = orc.NOME_EMPRESA ? `(${orc.NOME_EMPRESA})` : '';
             const clienteEmail = orc.EMAIL_CONTATO || 'Sem e-mail';
 
-            // Dados vindos do mapa de usuários
+            // CORREÇÃO: Sintaxe ?. (junto) para optional chaining
             const clienteEndereco = orc.usu_cadastro ? .END_USU || 'Endereço não disponível';
             const clienteTelBanco = orc.usu_cadastro ? .TEL_USU;
+
             const clienteTelOrcamento = orc.TELEFONE_CONTATO;
 
             // Prioriza telefone do pedido
@@ -130,14 +130,15 @@ document.addEventListener('DOMContentLoaded', async() => {
             const descCompleta = orc.DESCRICAO || 'Sem descrição.';
             const statusAtual = orc.STATUS_ORCAMENTO || 'Não Visualizado';
 
-            // Links
+            // Links (Amarelo #f0c029)
             const emailLink = `<a href="mailto:${clienteEmail}" title="Enviar e-mail" style="color: #f0c029; text-decoration: none;">${clienteEmail}</a>`;
             const whatsLink = telefoneFinal !== 'Sem telefone' ? `<a href="https://wa.me/55${telefoneFinal.replace(/\D/g,'')}" target="_blank" style="color: #2ecc71; text-decoration: none; margin-left: 5px;" title="Chamar no WhatsApp"><i class="fab fa-whatsapp"></i></a>` : '';
 
+            // Texto do endereço em amarelo também, conforme pedido
             tr.innerHTML = `
-                <td><strong>#${orc.COD_ORCAMENTO}</strong></td>
+                <td style="color: #f0c029;"><strong>#${orc.COD_ORCAMENTO}</strong></td>
                 <td>
-                    <div>${dataStr}</div>
+                    <div style="color: #ddd;">${dataStr}</div>
                     <div style="font-size: 0.85em; color: #888;">${horaStr}</div>
                 </td>
                 <td class="client-info">
@@ -145,8 +146,8 @@ document.addEventListener('DOMContentLoaded', async() => {
                     <div class="client-email">${emailLink}</div>
                     <div style="font-size: 0.85em; color: #ccc;">${telefoneFinal} ${whatsLink}</div>
                 </td>
-                <td style="max-width: 200px; font-size: 0.9em; color: #ccc;">${clienteEndereco}</td>
-                <td>${orc.TIPO_SERVICO}</td>
+                <td style="max-width: 200px; font-size: 0.9em; color: #f0c029;">${clienteEndereco}</td>
+                <td style="color: #ddd;">${orc.TIPO_SERVICO}</td>
                 
                 <td style="text-align: center;">
                     <button class="btn-ver-desc" style="padding: 5px 10px; background: transparent; border: 1px solid #f0c029; color: #f0c029; border-radius: 4px; cursor: pointer; font-size: 0.85em;">
