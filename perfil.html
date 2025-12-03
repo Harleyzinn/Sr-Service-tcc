@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Perfil - SR Service</title>
+
+    <!-- IMPORTANTE: style.css deve vir PRIMEIRO para carregar o modal e header -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="perfil.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <img src="sr-logo-placeholder.png" alt="SR Logo">
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Página Inicial</a></li>
+                    <li><a href="sobre_nos.html">Sobre-nós</a></li>
+                    <li><a href="orcamento.html">Orçamento</a></li>
+                </ul>
+            </nav>
+            <div class="login-area">
+                <!-- JS -->
+            </div>
+        </div>
+    </header>
+
+    <main class="profile-container">
+        <div class="profile-card">
+            <div class="profile-header">
+                <h1><i class="fas fa-user-circle"></i> Meu Perfil</h1>
+                <p>Aqui você pode visualizar e editar suas informações.</p>
+            </div>
+
+            <form id="form-perfil">
+                <!-- Seção de Dados Pessoais -->
+                <h3 class="section-title"><i class="fas fa-id-card"></i> Dados Pessoais</h3>
+                <div class="form-grid">
+                    <div class="info-field full-width">
+                        <label for="nome">Nome Completo</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="nome" readonly>
+                            <button type="button" class="edit-btn"><i class="fas fa-pencil-alt"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="info-field">
+                        <label for="email">E-mail</label>
+                        <input type="email" id="email" readonly style="opacity: 0.7; cursor: not-allowed;">
+                    </div>
+
+                    <div class="info-field">
+                        <label for="cpf">CPF/CNPJ</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="cpf" readonly>
+                            <button type="button" class="edit-btn"><i class="fas fa-pencil-alt"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="info-field full-width">
+                        <label for="endereco">Endereço</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="endereco" readonly>
+                            <button type="button" class="edit-btn"><i class="fas fa-pencil-alt"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção de Segurança -->
+                <h3 class="section-title" style="margin-top: 30px;"><i class="fas fa-lock"></i> Segurança</h3>
+                <div class="form-grid">
+                    <div class="info-field full-width">
+                        <label for="nova_senha">Nova Senha (deixe em branco para manter a atual)</label>
+                        <input type="password" id="nova_senha" placeholder="Mínimo 6 caracteres">
+                    </div>
+
+                    <div class="info-field full-width">
+                        <label for="confirma_senha">Confirmar Nova Senha</label>
+                        <input type="password" id="confirma_senha" placeholder="Repita a nova senha">
+                    </div>
+                </div>
+
+                <button type="submit" class="save-btn">Salvar Alterações</button>
+            </form>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-logo"><img src="sr-logo-placeholder.png" alt="SR Logo"></div>
+            <div class="footer-contact">
+                <p>©SR Service Cranes and Components</p>
+                <p>tel: (xx)997000206</p>
+                <p>email: adrekzo44@gmail.com</p>
+                <p>CEP: 18890-762</p>
+            </div>
+            <div class="footer-social"><a href="#"><i class="fab fa-whatsapp"></i></a><a href="#"><i class="fab fa-instagram"></i></a><a href="#"><i class="fab fa-linkedin-in"></i></a></div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script src="perfil.js"></script>
+</body>
+
+</html>

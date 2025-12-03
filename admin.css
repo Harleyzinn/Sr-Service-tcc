@@ -1,0 +1,167 @@
+/* Reset específico para garantir o tema escuro no corpo */
+
+body {
+    background-color: #1a1a1a;
+    color: #fff;
+    font-family: Arial, sans-serif;
+}
+
+
+/* Wrapper Principal */
+
+.admin-wrapper {
+    padding-top: 140px;
+    padding-bottom: 60px;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+}
+
+
+/* Cartão Admin (Fundo Escuro) */
+
+.admin-card {
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    padding: 30px;
+    width: 95%;
+    max-width: 1200px;
+}
+
+
+/* Cabeçalho com Flexbox para o Filtro */
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #f0c029;
+    padding-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.header-title h1 {
+    font-size: 2em;
+    color: #f0c029;
+    margin-bottom: 5px;
+}
+
+.header-title p {
+    color: #bbb;
+    font-size: 0.9em;
+}
+
+
+/* Filtro */
+
+.filter-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-container label {
+    font-weight: bold;
+    color: #f0c029;
+}
+
+.filter-container select {
+    padding: 8px 15px;
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+
+/* Tabela Escura */
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+}
+
+.admin-table th {
+    background-color: #111;
+    color: #f0c029;
+    padding: 15px;
+    text-align: left;
+    font-weight: bold;
+    border-bottom: 2px solid #333;
+}
+
+.admin-table td {
+    padding: 15px;
+    border-bottom: 1px solid #333;
+    color: #ddd;
+    vertical-align: top;
+    /* Alinha texto no topo para descrições longas */
+}
+
+.admin-table tr:hover {
+    background-color: #333;
+}
+
+
+/* Estilos de Texto dentro da tabela */
+
+.client-info div {
+    margin-bottom: 2px;
+}
+
+.client-email {
+    font-size: 0.85em;
+    color: #999;
+}
+
+.time-info {
+    font-size: 0.85em;
+    color: #f0c029;
+    font-weight: bold;
+    margin-top: 4px;
+}
+
+
+/* Select de Status na Tabela */
+
+.status-select {
+    padding: 6px;
+    border-radius: 4px;
+    background-color: #444;
+    color: #fff;
+    border: 1px solid #666;
+    cursor: pointer;
+    width: 100%;
+}
+
+.status-select:focus {
+    border-color: #f0c029;
+    outline: none;
+}
+
+.loading-text {
+    text-align: center;
+    padding: 40px;
+    color: #888;
+    font-style: italic;
+}
+
+
+/* Responsividade */
+
+@media (max-width: 768px) {
+    .admin-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

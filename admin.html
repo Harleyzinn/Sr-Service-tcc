@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin - SR Service</title>
+
+    <!-- CSS Global -->
+    <link rel="stylesheet" href="style.css">
+    <!-- CSS Específico do Admin (Tema Escuro) -->
+    <link rel="stylesheet" href="admin.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <img src="sr-logo-placeholder.png" alt="SR Logo">
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Página Inicial</a></li>
+                    <li><a href="admin.html" class="active">Painel Admin</a></li>
+                </ul>
+            </nav>
+            <div class="login-area"></div>
+        </div>
+    </header>
+
+    <main class="admin-wrapper">
+        <div class="admin-card">
+            <div class="admin-header">
+                <div class="header-title">
+                    <h1><i class="fas fa-tools"></i> Gerenciar Pedidos</h1>
+                    <p>Controle total das solicitações de orçamento.</p>
+                </div>
+
+                <!-- Filtro de Status -->
+                <div class="filter-container">
+                    <label for="filterStatus"><i class="fas fa-filter"></i> Filtrar por:</label>
+                    <select id="filterStatus">
+                        <option value="Todos">Todos</option>
+                        <option value="Não Visualizado">Não Visualizado</option>
+                        <option value="Pendente">Pendente</option>
+                        <option value="Concluido">Concluído</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Data/Hora</th>
+                            <th>Cliente</th>
+                            <th>Serviço</th>
+                            <th style="width: 25%;">Descrição</th>
+                            <!-- Coluna mais larga -->
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orcamentos-tbody">
+                        <tr>
+                            <td colspan="6" class="loading-text">Carregando pedidos...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+    <script src="admin.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,776 @@
+/* --- FONTES E RESET --- */
+
+@font-face {
+    font-family: 'Poppins-Thin';
+    src: url('Poppins-Thin.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: 'RopaSans-Regular';
+    src: url('RopaSans-Regular.ttf') format('truetype');
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5%;
+}
+
+
+/* --- CABEÇALHO --- */
+
+header {
+    background-color: #1a1a1a;
+    /* ALTURA FIXA DA BARRA */
+    height: 100px;
+    padding: 0;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 3px solid #f0c029;
+    display: flex;
+    align-items: center;
+}
+
+header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+}
+
+
+/* --- LOGO (TÉCNICA SEM ABSOLUTE) --- */
+
+header .logo {
+    height: 140%;
+    /* Ocupa a altura da barra */
+    display: flex;
+    align-items: flex-start;
+    /* Alinha a imagem ao TOPO da barra */
+    position: relative;
+    /* Necessário para z-index */
+    z-index: 1001;
+    /* Garante que fique acima do banner */
+}
+
+header .logo img {
+    height: 130px;
+    /* LOGO MAIOR QUE A BARRA (140px vs 90px) */
+    width: auto;
+    margin-top: 5px;
+    /* Um pequeno respiro do topo */
+    /* Como removemos o absolute, a imagem vai 'empurrar' o menu para a direita, evitando sobreposição */
+}
+
+header nav ul {
+    list-style: none;
+    display: flex;
+}
+
+header nav ul li {
+    margin-left: 20px;
+}
+
+header nav ul li a {
+    font-family: 'Poppins-Thin', sans-serif;
+    font-weight: bold;
+    color: #FFCC00;
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: color 0.3s;
+}
+
+header nav ul li a:hover,
+header nav ul li a.active {
+    color: #fff;
+}
+
+
+/* --- BOTÕES DE LOGIN --- */
+
+.login-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+}
+
+.login-btn,
+.register-btn,
+.logout-btn,
+.admin-btn {
+    font-family: 'Poppins-Thin', sans-serif;
+    background-color: #f0c029;
+    color: #1a1a1a;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.register-btn,
+.admin-btn {
+    background-color: transparent;
+    color: #f0c029;
+    border: 1px solid #f0c029;
+}
+
+.login-btn:hover,
+.register-btn:hover {
+    opacity: 0.8;
+}
+
+
+/* --- POPUP LOGIN --- */
+
+.login-popup {
+    display: none;
+    position: absolute;
+    top: calc(100% + 15px);
+    right: 0;
+    background-color: #2a2a2a;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    width: 300px;
+    z-index: 1001;
+    border: 1px solid #444;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.login-popup::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    right: 20px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid #2a2a2a;
+}
+
+.login-popup.show {
+    display: block;
+}
+
+.login-popup .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #888;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2em;
+}
+
+.login-popup .close-btn:hover {
+    color: #fff;
+}
+
+.login-popup form input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    background: #333;
+    border: 1px solid #444;
+    color: #fff;
+    border-radius: 4px;
+    outline: none;
+}
+
+.login-popup form input:focus {
+    border-color: #f0c029;
+}
+
+.login-popup .submit-login {
+    width: 100%;
+    padding: 12px;
+    background: #f0c029;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #1a1a1a;
+    margin-top: 5px;
+    transition: background 0.3s;
+}
+
+.login-popup .submit-login:hover {
+    background: #d4a910;
+}
+
+.login-popup .forgot-password {
+    display: block;
+    text-align: center;
+    margin-top: 15px;
+    color: #bbb;
+    font-size: 0.9em;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.login-popup .forgot-password:hover {
+    color: #f0c029;
+}
+
+
+/* --- MODAL CUSTOMIZADO --- */
+
+.custom-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+}
+
+.custom-modal-overlay.active {
+    display: flex;
+}
+
+.custom-modal {
+    background-color: #2a2a2a;
+    padding: 35px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 420px;
+    text-align: center;
+    border: 2px solid #f0c029;
+    box-shadow: 0 0 25px rgba(240, 192, 41, 0.15);
+    animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.custom-modal h3 {
+    font-family: 'RopaSans-Regular', sans-serif;
+    font-size: 2em;
+    color: #f0c029;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.custom-modal p {
+    color: #eee;
+    font-size: 1.1em;
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+.custom-modal-input-container {
+    margin-bottom: 25px;
+    display: none;
+}
+
+.custom-modal input {
+    width: 100%;
+    padding: 14px;
+    background: #333;
+    border: 1px solid #555;
+    color: #fff;
+    border-radius: 6px;
+    font-size: 1em;
+    outline: none;
+    text-align: center;
+}
+
+.custom-modal input:focus {
+    border-color: #f0c029;
+    background: #3a3a3a;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.custom-modal-btn {
+    background-color: #f0c029;
+    color: #1a1a1a;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 1em;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.3s, box-shadow 0.3s;
+    flex: 1;
+    max-width: 120px;
+}
+
+.custom-modal-btn:hover {
+    background-color: #ffdb4d;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(240, 192, 41, 0.3);
+}
+
+.custom-modal-btn.cancel {
+    background-color: transparent;
+    border: 1px solid #666;
+    color: #ccc;
+}
+
+.custom-modal-btn.cancel:hover {
+    background-color: #333;
+    color: #fff;
+    border-color: #888;
+    box-shadow: none;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes modalPop {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+
+/* --- LAYOUT GERAL --- */
+
+main.content-wrapper,
+main {
+    padding-top: 93px;
+}
+
+
+/* BANNER ESTÁTICO (PÁGINAS INTERNAS) */
+
+.page-header {
+    background-color: #1a1a1a;
+    background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('image_66712c.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+    border-bottom: 4px solid #f0c029;
+}
+
+.page-header-content {
+    z-index: 2;
+    padding: 0 20px;
+    animation: fadeIn 0.8s ease-out;
+}
+
+.page-header h1 {
+    font-family: 'RopaSans-Regular', sans-serif;
+    font-size: 3.5em;
+    color: #f0c029;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.8);
+    letter-spacing: 2px;
+}
+
+.page-header p {
+    font-family: 'Poppins-Thin', sans-serif;
+    font-size: 1.4em;
+    color: #fff;
+    font-weight: bold;
+    text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.8);
+}
+
+
+/* --- CARROSSEL HERO (HOME) --- */
+
+.hero {
+    position: relative;
+    width: 100%;
+    height: 500px;
+    background-color: #000;
+    overflow: hidden;
+}
+
+.carousel-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.carousel-track {
+    display: flex;
+    height: 100%;
+    transition: transform 0.5s ease-in-out;
+}
+
+.carousel-slide {
+    min-width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.carousel-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.carousel-slide .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.6) 40%, rgba(0, 0, 0, 0) 100%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 60px;
+}
+
+.carousel-slide:hover .overlay {
+    opacity: 1;
+}
+
+.overlay-content {
+    text-align: center;
+    color: #fff;
+    transform: translateY(20px);
+    transition: transform 0.4s ease;
+}
+
+.carousel-slide:hover .overlay-content {
+    transform: translateY(0);
+}
+
+.overlay-content h2 {
+    font-family: 'RopaSans-Regular', sans-serif;
+    font-size: 2.5em;
+    color: #f0c029;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.overlay-content p {
+    font-family: 'Poppins-Thin', sans-serif;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.carousel-nav {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    transform: translateY(-50%);
+    padding: 0 20px;
+    pointer-events: none;
+}
+
+.carousel-prev,
+.carousel-next {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 3em;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: color 0.3s, transform 0.3s;
+}
+
+.carousel-prev:hover,
+.carousel-next:hover {
+    color: #f0c029;
+    transform: scale(1.2);
+}
+
+
+/* --- SEÇÕES GERAIS --- */
+
+.intro-section {
+    padding: 60px 0;
+    background: #fff;
+}
+
+.intro-section .container {
+    display: flex;
+    align-items: center;
+    gap: 50px;
+}
+
+.intro-text {
+    flex: 1;
+}
+
+.intro-text h2 {
+    font-family: 'RopaSans-Regular', sans-serif;
+    font-size: 2.2em;
+    color: #1a1a1a;
+    margin-bottom: 20px;
+}
+
+.intro-video {
+    flex: 1;
+    text-align: center;
+}
+
+
+/* ESTILO DO VÍDEO DO YOUTUBE */
+
+.intro-video iframe {
+    width: 100%;
+    height: 315px;
+    /* Altura padrão, ajusta no mobile */
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    border: none;
+}
+
+.services-section {
+    padding: 60px 0;
+    background: #f4f4f4;
+    text-align: center;
+}
+
+.services-section h2 {
+    font-family: 'RopaSans-Regular', sans-serif;
+    font-size: 2.5em;
+    margin-bottom: 40px;
+    color: #1a1a1a;
+}
+
+.services-grid {
+    display: flex;
+    justify-content: space-around;
+    text-align: left;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.services-grid ul {
+    list-style: none;
+}
+
+.services-grid li {
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+.services-grid li::before {
+    content: '\f00c';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    color: #f0c029;
+    margin-right: 10px;
+}
+
+
+/* --- RODAPÉ --- */
+
+footer {
+    background-color: #1a1a1a;
+    color: #ccc;
+    padding: 40px 0;
+}
+
+footer .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+footer .footer-logo img {
+    height: 50px;
+    opacity: 0.8;
+}
+
+footer .footer-contact p {
+    margin: 5px 0;
+    font-size: 0.9em;
+}
+
+footer .footer-social a {
+    color: #ccc;
+    font-size: 1.5em;
+    margin-left: 15px;
+    transition: color 0.3s;
+}
+
+footer .footer-social a:hover {
+    color: #f0c029;
+}
+
+
+/* Responsivo */
+
+@media (max-width: 768px) {
+    .hero {
+        height: 300px;
+    }
+    .page-header h1 {
+        font-size: 2.2em;
+    }
+    .intro-section .container {
+        flex-direction: column;
+    }
+    .intro-video iframe {
+        height: 250px;
+    }
+    /* Ajuste altura vídeo mobile */
+    .services-grid {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+    }
+    footer .container {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+    }
+}
+
+
+/* ... [MANTENHA TODO O CSS ANTERIOR, ADICIONE ISTO NO FINAL] ... */
+
+
+/* --- PÁGINA DE POLÍTICA DE PRIVACIDADE --- */
+
+.privacy-section {
+    padding: 60px 0;
+    background-color: #fff;
+    min-height: 80vh;
+}
+
+.privacy-content {
+    max-width: 900px;
+    margin: 0 auto;
+    color: #333;
+    line-height: 1.8;
+}
+
+.privacy-content h1 {
+    font-family: 'RopaSans-Regular', sans-serif;
+    font-size: 2.5em;
+    color: #1a1a1a;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #f0c029;
+    padding-bottom: 10px;
+}
+
+.privacy-content h3 {
+    font-family: 'RopaSans-Regular', sans-serif;
+    font-size: 1.5em;
+    color: #f0c029;
+    margin-top: 30px;
+    margin-bottom: 15px;
+}
+
+.privacy-content p {
+    margin-bottom: 15px;
+    text-align: justify;
+}
+
+.privacy-content ul,
+.privacy-content ol {
+    margin-bottom: 15px;
+    padding-left: 20px;
+}
+
+.privacy-content li {
+    margin-bottom: 5px;
+}
+
+.privacy-content .date {
+    font-style: italic;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+
+/* --- AJUSTES NO RODAPÉ (COLUNAS) --- */
+
+footer .container {
+    align-items: flex-start;
+    /* Alinha no topo */
+    flex-wrap: wrap;
+    gap: 40px;
+}
+
+.footer-col {
+    flex: 1;
+    min-width: 250px;
+}
+
+.footer-col h4 {
+    color: #f0c029;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+    text-transform: uppercase;
+}
+
+.footer-map {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-map li {
+    margin-bottom: 8px;
+}
+
+.footer-map a {
+    color: #ccc;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.footer-map a:hover {
+    color: #f0c029;
+    padding-left: 5px;
+}
+
+.footer-social {
+    margin-top: 20px;
+}

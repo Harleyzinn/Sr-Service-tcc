@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar Senha - SR Service</title>
+
+    <!-- CSS Global -->
+    <link rel="stylesheet" href="style.css">
+    <!-- CSS do Cadastro para manter a identidade visual (fundo escuro/card amarelo) -->
+    <link rel="stylesheet" href="cadastro.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+</head>
+
+<body>
+
+    <main class="register-container">
+        <div class="register-card" style="max-width: 500px;">
+            <div class="register-header">
+                <h1><i class="fas fa-key"></i> Nova Senha</h1>
+                <p>Crie uma nova senha segura para sua conta.</p>
+            </div>
+
+            <form id="recoveryForm">
+                <div class="form-group">
+                    <label for="newPassword">Nova Senha</label>
+                    <input type="password" id="newPassword" name="newPassword" required placeholder="******" minlength="6">
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirmar Nova Senha</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="******" minlength="6">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-cadastrar">Atualizar Senha</button>
+                    <a href="index.html" class="btn-voltar" style="text-align: center; display: block; margin-top: 10px;">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async() => {
+            // Verifica sessão. Quando o usuário clica no link do email, o Supabase
+            // automaticamente coloca o token na URL e autentica o usuário.
+
+            // Pequeno delay para garantir que o Supabase processou o hash da URL
+            setTimeout(async() => {
+                // Garante que estamos acessando o cliente inicializado no window
+                const sbClient = window.supabase;
+
+                if (!sbClient || !sbClient.auth) {
+                    console.error("Erro: Cliente Supabase não inicializado ou auth indisponível.", sbClient);
+                    if (typeof showCustomModal === 'function') {
+                        await showCustomModal("Erro interno: Falha ao carregar autenticação.", "Erro");
+                    }
+                    return;
+                }
+
+                const {
+                    data: {
+                        user
+                    }
+                } = await sbClient.auth.getUser();
+
+                if (!user) {
+                    if (typeof showCustomModal === 'function') {
+                        await showCustomModal("Link de recuperação inválido ou expirado. Solicite um novo.", "Erro");
+                    } else {
+                        alert("Link inválido.");
+                    }
+                    window.location.href = 'index.html';
+                }
+            }, 500);
+
+            const form = document.getElementById('recoveryForm');
+
+            form.addEventListener('submit', async(e) => {
+                e.preventDefault();
+
+                const sbClient = window.supabase;
+                if (!sbClient || !sbClient.auth) {
+                    alert("Erro: Supabase não conectado.");
+                    return;
+                }
+
+                const btn = form.querySelector('button[type="submit"]');
+                const originalText = btn.innerText;
+                btn.disabled = true;
+                btn.innerText = "Atualizando...";
+
+                const newPass = document.getElementById('newPassword').value;
+                const confirmPass = document.getElementById('confirmPassword').value;
+
+                if (newPass !== confirmPass) {
+                    if (typeof showCustomModal === 'function') showCustomModal("As senhas não coincidem.", "Erro");
+                    else alert("Senhas não conferem.");
+                    btn.disabled = false;
+                    btn.innerText = originalText;
+                    return;
+                }
+
+                if (newPass.length < 6) {
+                    if (typeof showCustomModal === 'function') showCustomModal("A senha deve ter no mínimo 6 caracteres.", "Erro");
+                    else alert("Senha muito curta.");
+                    btn.disabled = false;
+                    btn.innerText = originalText;
+                    return;
+                }
+
+                // Atualiza a senha do usuário LOGADO (via link de recuperação)
+                const {
+                    data,
+                    error
+                } = await sbClient.auth.updateUser({
+                    password: newPass
+                });
+
+                if (error) {
+                    if (typeof showCustomModal === 'function') showCustomModal("Erro ao atualizar: " + error.message, "Erro");
+                    else alert("Erro: " + error.message);
+                } else {
+                    if (typeof showCustomModal === 'function') await showCustomModal("Senha atualizada com sucesso! Faça login com a nova senha.", "Sucesso");
+                    else alert("Sucesso!");
+
+                    // Desloga para forçar o usuário a entrar com a nova senha
+                    await sbClient.auth.signOut();
+                    window.location.href = 'index.html';
+                }
+
+                btn.disabled = false;
+                btn.innerText = originalText;
+            });
+        });
+    </script>
+</body>
+
+</html>

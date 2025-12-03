@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meus Orçamentos - SR Service</title>
+
+    <!-- CSS Global -->
+    <link rel="stylesheet" href="style.css">
+    <!-- CSS Específico -->
+    <link rel="stylesheet" href="consultar_orcamento.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <img src="sr-logo-placeholder.png" alt="SR Logo">
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Página Inicial</a></li>
+                    <li><a href="sobre_nos.html">Sobre-nós</a></li>
+                    <li><a href="orcamento.html">Orçamento</a></li>
+                </ul>
+            </nav>
+            <div class="login-area">
+                <!-- Preenchido via JS -->
+            </div>
+        </div>
+    </header>
+
+    <main class="main-wrapper">
+        <div class="content-card wide-card">
+
+            <!-- Título Principal -->
+            <div class="card-header">
+                <h1><i class="fas fa-file-invoice-dollar"></i> Meus Pedidos em Andamento</h1>
+                <p>Acompanhe o status das suas solicitações ativas.</p>
+
+                <!-- Área de Filtro -->
+                <div class="filter-wrapper">
+                    <label for="filtroStatus"><i class="fas fa-filter"></i> Filtrar por Status:</label>
+                    <select id="filtroStatus">
+                        <option value="Todos">Todos os Ativos</option>
+                        <option value="Pendente">Pendente</option>
+                        <option value="Em Análise">Em Análise</option>
+                        <option value="Aprovado">Aprovado</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Tabela de Pedidos ATIVOS -->
+            <div class="table-responsive">
+                <table class="custom-table" id="tabela-ativos">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Data/Hora</th>
+                            <th>Serviço</th>
+                            <th style="width: 30%;">Descrição</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-orcamentos-ativos">
+                        <tr>
+                            <td colspan="5" class="loading-text">
+                                <i class="fas fa-spinner fa-spin"></i> Carregando...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Divisória visual -->
+            <hr class="section-divider">
+
+            <!-- Título Secundário -->
+            <div class="card-header secondary-header">
+                <h2><i class="fas fa-history"></i> Histórico de Concluídos</h2>
+                <p>Pedidos finalizados, recusados ou cancelados.</p>
+            </div>
+
+            <!-- Tabela de Pedidos CONCLUÍDOS -->
+            <div class="table-responsive">
+                <table class="custom-table" id="tabela-concluidos">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Data/Hora</th>
+                            <th>Serviço</th>
+                            <th style="width: 30%;">Descrição</th>
+                            <th>Status Final</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-orcamentos-concluidos">
+                        <tr>
+                            <td colspan="5" class="loading-text">Carregando histórico...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mensagem de "Sem dados" (aparece se não houver NADA em nenhuma tabela) -->
+            <div id="no-data-message" class="no-data" style="display: none;">
+                <div class="empty-state-icon">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <h3>Nenhum orçamento encontrado</h3>
+                <p>Você ainda não solicitou nenhum serviço conosco.</p>
+                <a href="orcamento.html" class="btn-novo-orcamento">
+                    <i class="fas fa-plus-circle"></i> Solicitar Novo Orçamento
+                </a>
+            </div>
+
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-contact">
+                <p>©SR Service Cranes and Components</p>
+                <p>tel: (xx)997000206</p>
+                <p>email: adrekzo44@gmail.com</p>
+                <p>CEP: 18890-762</p>
+            </div>
+            <div class="footer-social"><a href="#"><i class="fab fa-whatsapp"></i></a><a href="#"><i class="fab fa-instagram"></i></a><a href="#"><i class="fab fa-linkedin-in"></i></a></div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script src="consultar_orcamento.js"></script>
+</body>
+
+</html>
