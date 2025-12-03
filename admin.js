@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async() => {
     const tbody = document.getElementById('orcamentos-tbody');
     const filterSelect = document.getElementById('filterStatus');
 
-    // --- FUNÇÃO PARA BUSCAR DADOS (Otimizada) ---
+    // --- FUNÇÃO PARA BUSCAR DADOS ---
     async function fetchOrcamentos() {
         try {
             tbody.innerHTML = '<tr><td colspan="7" class="loading-text" style="text-align:center; padding:20px; color:#f0c029;">Carregando pedidos...</td></tr>';
@@ -70,7 +70,6 @@ document.addEventListener('DOMContentLoaded', async() => {
                     .in('COD_USUARIO', userIds);
 
                 if (!userError && usuarios) {
-                    // Cria um mapa para acesso rápido: { 1: {endereco...}, 2: {endereco...} }
                     mapaUsuarios = usuarios.reduce((acc, u) => {
                         acc[u.COD_USUARIO] = u;
                         return acc;
@@ -116,9 +115,11 @@ document.addEventListener('DOMContentLoaded', async() => {
             const clienteEmpresa = orc.NOME_EMPRESA ? `(${orc.NOME_EMPRESA})` : '';
             const clienteEmail = orc.EMAIL_CONTATO || 'Sem e-mail';
 
-            // CORREÇÃO: Sintaxe ?. (junto) para optional chaining
-            const clienteEndereco = orc.usu_cadastro ? .END_USU || 'Endereço não disponível';
-            const clienteTelBanco = orc.usu_cadastro ? .TEL_USU;
+            // SINTAXE SEGURA (Substitui o ?. que estava dando erro)
+            // Verifica se orc.usu_cadastro existe, se sim pega END_USU, senão usa fallback
+            const clienteEndereco = (orc.usu_cadastro && orc.usu_cadastro.END_USU) ? orc.usu_cadastro.END_USU : 'Endereço não disponível';
+
+            const clienteTelBanco = (orc.usu_cadastro && orc.usu_cadastro.TEL_USU) ? orc.usu_cadastro.TEL_USU : '';
 
             const clienteTelOrcamento = orc.TELEFONE_CONTATO;
 
@@ -134,7 +135,7 @@ document.addEventListener('DOMContentLoaded', async() => {
             const emailLink = `<a href="mailto:${clienteEmail}" title="Enviar e-mail" style="color: #f0c029; text-decoration: none;">${clienteEmail}</a>`;
             const whatsLink = telefoneFinal !== 'Sem telefone' ? `<a href="https://wa.me/55${telefoneFinal.replace(/\D/g,'')}" target="_blank" style="color: #2ecc71; text-decoration: none; margin-left: 5px;" title="Chamar no WhatsApp"><i class="fab fa-whatsapp"></i></a>` : '';
 
-            // Texto do endereço em amarelo também, conforme pedido
+            // Texto do endereço em amarelo também
             tr.innerHTML = `
                 <td style="color: #f0c029;"><strong>#${orc.COD_ORCAMENTO}</strong></td>
                 <td>
