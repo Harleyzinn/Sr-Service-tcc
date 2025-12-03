@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', async() => {
-    // 1. Verifica se o Supabase está disponível
     const sbClient = window.supabase;
     if (!sbClient) {
         console.error('Erro CRÍTICO: Cliente Supabase não encontrado.');
@@ -7,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async() => {
         return;
     }
 
-    // 2. Verifica Login
+    // Verifica Login e Admin
     const { data: { user } } = await sbClient.auth.getUser();
 
     if (!user) {
@@ -16,7 +15,6 @@ document.addEventListener('DOMContentLoaded', async() => {
         return;
     }
 
-    // 3. Verifica Permissão de Admin
     try {
         const { data: perfil, error } = await sbClient
             .from('usu_cadastro')
@@ -35,17 +33,14 @@ document.addEventListener('DOMContentLoaded', async() => {
         return;
     }
 
-    // --- VARIÁVEIS GLOBAIS ---
     let todosOrcamentos = [];
     const tbody = document.getElementById('orcamentos-tbody');
     const filterSelect = document.getElementById('filterStatus');
 
-    // --- FUNÇÃO PARA BUSCAR DADOS ---
     async function fetchOrcamentos() {
         try {
-            tbody.innerHTML = '<tr><td colspan="7" class="loading-text" style="text-align:center; padding:20px; color:#f0c029;">Carregando pedidos...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="loading-text" style="text-align:center; padding:20px; color:#f0c029;">Carregando pedidos...</td></tr>';
 
-            // 1. Busca os orçamentos
             const { data: orcamentos, error: orcError } = await sbClient
                 .from('tb_orcamento')
                 .select('*')
@@ -58,20 +53,18 @@ document.addEventListener('DOMContentLoaded', async() => {
                 return;
             }
 
-            // 2. Coleta IDs únicos de usuários
             const userIds = [...new Set(orcamentos.map(o => o.fk_cod_usuario).filter(id => id))];
 
             let mapaUsuarios = {};
 
             if (userIds.length > 0) {
-                // Busca dados dos usuários
+                // AGORA BUSCA TAMBÉM O CPF_CNPJ_USU
                 const { data: usuarios, error: userError } = await sbClient
                     .from('usu_cadastro')
-                    .select('COD_USUARIO, END_USU, TEL_USU, EMAIL_USU')
+                    .select('COD_USUARIO, END_USU, TEL_USU, EMAIL_USU, CPF_CNPJ_USU')
                     .in('COD_USUARIO', userIds);
 
                 if (!userError && usuarios) {
-                    // Cria mapa indexado pelo ID para acesso instantâneo
                     mapaUsuarios = usuarios.reduce((acc, u) => {
                         acc[u.COD_USUARIO] = u;
                         return acc;
@@ -79,10 +72,8 @@ document.addEventListener('DOMContentLoaded', async() => {
                 }
             }
 
-            // 3. Monta o objeto final
             const orcamentosCompletos = orcamentos.map(orc => {
-                // Tenta achar o usuário pelo ID. Se não achar, retorna objeto vazio seguro.
-                const dadosUser = mapaUsuarios[orc.fk_cod_usuario] || {};
+                const dadosUser = mapaUsuarios[orc.fk_cod_usuario] || { END_USU: 'Não encontrado', TEL_USU: '', CPF_CNPJ_USU: '' };
                 return {...orc, usu_cadastro: dadosUser };
             });
 
@@ -91,55 +82,38 @@ document.addEventListener('DOMContentLoaded', async() => {
 
         } catch (error) {
             console.error('Erro FATAL ao buscar orçamentos:', error);
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red; padding:20px;">Erro ao carregar dados: ${error.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:red; padding:20px;">Erro ao carregar dados: ${error.message}</td></tr>`;
         }
     }
 
-    // --- FUNÇÃO DE RENDERIZAÇÃO DA TABELA ---
     function renderTable(lista) {
         tbody.innerHTML = '';
 
         if (lista.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 30px; color: #888;">Nenhum pedido encontrado.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 30px; color: #888;">Nenhum pedido encontrado.</td></tr>';
             return;
         }
 
         lista.forEach(orc => {
             const tr = document.createElement('tr');
 
-            // Formatação de Data e Hora
             const dataRaw = orc.DATA_SOLICITACAO || orc.created_at || new Date().toISOString();
             const dateObj = new Date(dataRaw);
             const dataStr = dateObj.toLocaleDateString('pt-BR');
             const horaStr = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-            // Dados do Cliente (Fallback seguro)
             const clienteNome = orc.NOME_CONTATO || 'Desconhecido';
             const clienteEmpresa = orc.NOME_EMPRESA ? `(${orc.NOME_EMPRESA})` : '';
+            const clienteEmail = orc.EMAIL_CONTATO || 'Sem e-mail';
 
-            // Tenta pegar email do cadastro, senão do formulário
-            const clienteEmail = (orc.usu_cadastro && orc.usu_cadastro.EMAIL_USU) ? orc.usu_cadastro.EMAIL_USU : (orc.EMAIL_CONTATO || 'Sem e-mail');
+            // DADOS DO CADASTRO
+            // Fallback seguro usando sintaxe compatível
+            const clienteEndereco = (orc.usu_cadastro && orc.usu_cadastro.END_USU) ? orc.usu_cadastro.END_USU : 'Não disponível';
+            const clienteCpf = (orc.usu_cadastro && orc.usu_cadastro.CPF_CNPJ_USU) ? orc.usu_cadastro.CPF_CNPJ_USU : '---';
+            const clienteTelBanco = (orc.usu_cadastro && orc.usu_cadastro.TEL_USU) ? orc.usu_cadastro.TEL_USU : '';
 
-            // --- ENDEREÇO E TELEFONE ---
-            // Verifica se existe o objeto usu_cadastro e se tem o campo END_USU
-            const enderecoCadastrado = (orc.usu_cadastro && orc.usu_cadastro.END_USU) ? orc.usu_cadastro.END_USU : null;
-
-            // Link Google Maps
-            let displayEndereco = '<span style="color: #666; font-style: italic;">Endereço não disponível</span>';
-
-            if (enderecoCadastrado && enderecoCadastrado.trim() !== '') {
-                // Cria link para Google Maps
-                const urlMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoCadastrado)}`;
-                displayEndereco = `
-                    <a href="${urlMaps}" target="_blank" style="color: #f0c029; text-decoration: none; border-bottom: 1px dotted #f0c029;" title="Ver no Google Maps">
-                        ${enderecoCadastrado} <i class="fas fa-map-marker-alt" style="font-size: 0.8em; margin-left: 3px;"></i>
-                    </a>`;
-            }
-
-            // Telefone
-            const telBanco = (orc.usu_cadastro && orc.usu_cadastro.TEL_USU) ? orc.usu_cadastro.TEL_USU : '';
-            const telForm = orc.TELEFONE_CONTATO || '';
-            let telefoneFinal = telBanco || telForm;
+            const clienteTelOrcamento = orc.TELEFONE_CONTATO;
+            let telefoneFinal = clienteTelOrcamento || clienteTelBanco || '';
 
             if (telefoneFinal) telefoneFinal = formatarTelefone(telefoneFinal.toString());
             else telefoneFinal = 'Sem telefone';
@@ -147,9 +121,15 @@ document.addEventListener('DOMContentLoaded', async() => {
             const descCompleta = orc.DESCRICAO || 'Sem descrição.';
             const statusAtual = orc.STATUS_ORCAMENTO || 'Não Visualizado';
 
-            // Link Whats
-            const whatsLink = telefoneFinal !== 'Sem telefone' ? `<a href="https://wa.me/55${telefoneFinal.replace(/\D/g,'')}" target="_blank" style="color: #2ecc71; text-decoration: none; margin-left: 5px;" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>` : '';
             const emailLink = `<a href="mailto:${clienteEmail}" title="Enviar e-mail" style="color: #f0c029; text-decoration: none;">${clienteEmail}</a>`;
+            const whatsLink = telefoneFinal !== 'Sem telefone' ? `<a href="https://wa.me/55${telefoneFinal.replace(/\D/g,'')}" target="_blank" style="color: #2ecc71; text-decoration: none; margin-left: 5px;" title="Chamar no WhatsApp"><i class="fab fa-whatsapp"></i></a>` : '';
+
+            // Link Google Maps
+            let displayEndereco = '<span style="color:#666;">---</span>';
+            if (clienteEndereco !== 'Não disponível') {
+                const urlMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(clienteEndereco)}`;
+                displayEndereco = `<a href="${urlMaps}" target="_blank" style="color: #f0c029; text-decoration: none; border-bottom: 1px dotted #f0c029;">${clienteEndereco} <i class="fas fa-map-marker-alt"></i></a>`;
+            }
 
             tr.innerHTML = `
                 <td style="color: #f0c029;"><strong>#${orc.COD_ORCAMENTO}</strong></td>
@@ -162,9 +142,10 @@ document.addEventListener('DOMContentLoaded', async() => {
                     <div class="client-email">${emailLink}</div>
                     <div style="font-size: 0.85em; color: #ccc;">${telefoneFinal} ${whatsLink}</div>
                 </td>
-                <td style="max-width: 200px; font-size: 0.9em;">
-                    ${displayEndereco}
-                </td>
+                <!-- Coluna CPF -->
+                <td style="color: #ddd; font-size: 0.9em;">${clienteCpf}</td>
+                <!-- Coluna Endereço -->
+                <td style="max-width: 180px; font-size: 0.9em;">${displayEndereco}</td>
                 <td style="color: #ddd;">${orc.TIPO_SERVICO}</td>
                 
                 <td style="text-align: center;">
@@ -173,14 +154,11 @@ document.addEventListener('DOMContentLoaded', async() => {
                     </button>
                 </td>
 
-                <td style="min-width: 160px;"> <!-- Largura aumentada para não cortar o texto -->
-                    <select class="status-select" data-id="${orc.COD_ORCAMENTO}" style="width: 100%; padding: 8px; border-radius: 4px; background: #333; color: #fff; border: 1px solid #555; cursor: pointer;">
+                <td>
+                    <select class="status-select" data-id="${orc.COD_ORCAMENTO}" style="padding: 5px; border-radius: 4px; background: #333; color: #fff; border: 1px solid #555;">
                         <option value="Não Visualizado" ${statusAtual === 'Não Visualizado' ? 'selected' : ''}>Não Visualizado</option>
                         <option value="Pendente" ${statusAtual === 'Pendente' ? 'selected' : ''}>Pendente</option>
-                        <option value="Em Análise" ${statusAtual === 'Em Análise' ? 'selected' : ''}>Em Análise</option>
-                        <option value="Aprovado" ${statusAtual === 'Aprovado' ? 'selected' : ''}>Aprovado</option>
                         <option value="Concluido" ${statusAtual === 'Concluido' ? 'selected' : ''}>Concluído</option>
-                        <option value="Recusado" ${statusAtual === 'Recusado' ? 'selected' : ''}>Recusado</option>
                     </select>
                 </td>
             `;
@@ -196,7 +174,7 @@ document.addEventListener('DOMContentLoaded', async() => {
             tbody.appendChild(tr);
         });
 
-        // Eventos de mudança de status
+        // Event listeners para status... (Mantido igual)
         document.querySelectorAll('.status-select').forEach(sel => {
             sel.addEventListener('change', async(e) => {
                 const id = e.target.dataset.id;
@@ -222,13 +200,12 @@ document.addEventListener('DOMContentLoaded', async() => {
 
                 } catch (err) {
                     console.error(err);
-                    alert('Erro ao atualizar status: ' + err.message);
+                    alert('Erro ao atualizar: ' + err.message);
                     e.target.value = originalValue || novoStatus;
                     e.target.disabled = false;
                     e.target.style.opacity = '1';
                 }
             });
-
             sel.addEventListener('focus', (e) => {
                 e.target.setAttribute('data-original', e.target.value);
             });
