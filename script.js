@@ -62,10 +62,11 @@ async function setupHeader() {
             `;
         }
 
-        // 2. Botão MEUS PEDIDOS (NOVO!)
+        // 2. Botão MEUS ORÇAMENTOS (Adicionado Aqui)
+        // Redireciona para consultar_orcamento.html
         buttonsHTML += `
             <a href="consultar_orcamento.html" style="color: #ccc; text-decoration: none; margin-right: 15px; font-weight: 500; font-size: 0.95em; transition: color 0.3s;" onmouseover="this.style.color='#f0c029'" onmouseout="this.style.color='#ccc'">
-                <i class="fas fa-list-ul"></i> Meus Pedidos
+                <i class="fas fa-list-ul"></i> Meus Orçamentos
             </a>
         `;
 
@@ -231,10 +232,7 @@ async function handleForgotPassword() {
     const email = await showCustomModal("Digite seu e-mail para receber o link de recuperação:", "Recuperar Senha", true);
 
     if (email) {
-        let redirectUrl = window.location.origin + '/recuperar_senha.html';
-        if (window.location.protocol === 'file:') {
-            console.warn('Supabase Auth não funciona bem com protocolo file://. Use um servidor local.');
-        }
+        let redirectUrl = 'https://harleyzinn.github.io/Sr-Service-tcc/recuperar_senha.html';
 
         const sbClient = window.supabase;
         const { error } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });

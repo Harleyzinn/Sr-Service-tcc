@@ -84,10 +84,14 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.innerText = 'Cadastrando...';
 
             try {
-                // 1. Cria usuário no Auth
+                // 1. Cria usuário no Auth COM REDIRECT CORRETO
                 const { data: authData, error: authError } = await sbClient.auth.signUp({
                     email: email,
-                    password: senha
+                    password: senha,
+                    options: {
+                        // Força o redirecionamento para a URL correta do repositório
+                        emailRedirectTo: 'https://harleyzinn.github.io/Sr-Service-tcc/'
+                    }
                 });
 
                 if (authError) throw new Error(authError.message);
@@ -112,8 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.error('Erro ao salvar dados complementares:', insertError);
                     }
 
-                    // AQUI ESTÁ A CORREÇÃO:
-                    // O await faz o código parar e esperar você clicar no OK
                     await showCustomModal('Cadastro realizado com sucesso! Verifique seu e-mail para continuar.', 'Sucesso');
 
                     window.location.href = 'index.html';
