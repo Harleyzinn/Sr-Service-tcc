@@ -77,9 +77,9 @@ document.addEventListener('DOMContentLoaded', async() => {
                 }
             }
 
-            // 3. Monta o objeto final
+            // 3. Monta o objeto final combinando Orçamento + Cadastro do Usuário
             const orcamentosCompletos = orcamentos.map(orc => {
-                const dadosUser = mapaUsuarios[orc.fk_cod_usuario] || { END_USU: 'Não encontrado', TEL_USU: '' };
+                const dadosUser = mapaUsuarios[orc.fk_cod_usuario] || null;
                 return {...orc, usu_cadastro: dadosUser };
             });
 
@@ -110,32 +110,43 @@ document.addEventListener('DOMContentLoaded', async() => {
             const dataStr = dateObj.toLocaleDateString('pt-BR');
             const horaStr = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-            // Dados do Cliente
+            // Dados do Orçamento (Formulário)
             const clienteNome = orc.NOME_CONTATO || 'Desconhecido';
             const clienteEmpresa = orc.NOME_EMPRESA ? `(${orc.NOME_EMPRESA})` : '';
             const clienteEmail = orc.EMAIL_CONTATO || 'Sem e-mail';
 
-            // SINTAXE SEGURA (Substitui o ?. que estava dando erro)
-            // Verifica se orc.usu_cadastro existe, se sim pega END_USU, senão usa fallback
-            const clienteEndereco = (orc.usu_cadastro && orc.usu_cadastro.END_USU) ? orc.usu_cadastro.END_USU : 'Endereço não disponível';
+            // --- DADOS DO CADASTRO E GOOGLE MAPS ---
+            let textoEndereco = 'Endereço não cadastrado';
+            let clienteTelBanco = '';
 
-            const clienteTelBanco = (orc.usu_cadastro && orc.usu_cadastro.TEL_USU) ? orc.usu_cadastro.TEL_USU : '';
+            if (orc.usu_cadastro) {
+                if (orc.usu_cadastro.END_USU) textoEndereco = orc.usu_cadastro.END_USU;
+                if (orc.usu_cadastro.TEL_USU) clienteTelBanco = orc.usu_cadastro.TEL_USU;
+            }
 
+            // Cria o link do Google Maps
+            let displayEndereco = textoEndereco;
+            if (textoEndereco !== 'Endereço não cadastrado' && textoEndereco.trim() !== '') {
+                const encodedAddress = encodeURIComponent(textoEndereco);
+                // Link formatado para abrir busca no Maps
+                displayEndereco = `<a href="https://www.google.com/maps/search/?api=1&query=${encodedAddress}" target="_blank" style="color: #f0c029; text-decoration: none; border-bottom: 1px dotted #f0c029; transition: 0.3s;" title="Ver no Google Maps">${textoEndereco} <i class="fas fa-map-marker-alt" style="font-size: 0.8em; margin-left: 3px;"></i></a>`;
+            }
+
+            // Telefone
             const clienteTelOrcamento = orc.TELEFONE_CONTATO;
-
-            // Prioriza telefone do pedido
             let telefoneFinal = clienteTelOrcamento || clienteTelBanco || '';
+
             if (telefoneFinal) telefoneFinal = formatarTelefone(telefoneFinal.toString());
             else telefoneFinal = 'Sem telefone';
 
             const descCompleta = orc.DESCRICAO || 'Sem descrição.';
             const statusAtual = orc.STATUS_ORCAMENTO || 'Não Visualizado';
 
-            // Links (Amarelo #f0c029)
+            // Links Contato
             const emailLink = `<a href="mailto:${clienteEmail}" title="Enviar e-mail" style="color: #f0c029; text-decoration: none;">${clienteEmail}</a>`;
             const whatsLink = telefoneFinal !== 'Sem telefone' ? `<a href="https://wa.me/55${telefoneFinal.replace(/\D/g,'')}" target="_blank" style="color: #2ecc71; text-decoration: none; margin-left: 5px;" title="Chamar no WhatsApp"><i class="fab fa-whatsapp"></i></a>` : '';
 
-            // Texto do endereço em amarelo também
+            // Renderiza a linha
             tr.innerHTML = `
                 <td style="color: #f0c029;"><strong>#${orc.COD_ORCAMENTO}</strong></td>
                 <td>
@@ -147,7 +158,8 @@ document.addEventListener('DOMContentLoaded', async() => {
                     <div class="client-email">${emailLink}</div>
                     <div style="font-size: 0.85em; color: #ccc;">${telefoneFinal} ${whatsLink}</div>
                 </td>
-                <td style="max-width: 200px; font-size: 0.9em; color: #f0c029;">${clienteEndereco}</td>
+                <!-- Endereço com Link do Maps -->
+                <td style="max-width: 200px; font-size: 0.9em; color: #f0c029;">${displayEndereco}</td>
                 <td style="color: #ddd;">${orc.TIPO_SERVICO}</td>
                 
                 <td style="text-align: center;">
