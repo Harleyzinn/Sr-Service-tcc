@@ -1,15 +1,15 @@
 document.addEventListener('DOMContentLoaded', async() => {
-    // 1. Injeta os modais necessários no HTML
-    injectCustomModalHTML();
-    injectLoginModalHTML();
+    // 1. Injeta os modais
+    injectCustomModalHTML(); // Z-Index: 11000 (Fica na frente de tudo)
+    injectLoginModalHTML(); // Z-Index: 10000
 
-    // 2. Configura o Cabeçalho (Botões de Login/Cadastro/Logout)
+    // 2. Configura o Cabeçalho
     await setupHeader();
 
-    // 3. Atualiza o Rodapé (Layout 3 colunas sem logo)
+    // 3. Atualiza o Rodapé
     updateFooter();
 
-    // 4. Verifica se é um redirecionamento de recuperação de senha (link do e-mail)
+    // 4. Verifica recuperação de senha
     if (window.location.hash && window.location.hash.includes('type=recovery')) {
         if (!window.location.pathname.includes('recuperar_senha.html')) {
             window.location.href = 'recuperar_senha.html' + window.location.hash;
@@ -22,9 +22,13 @@ async function setupHeader() {
     const loginArea = document.querySelector('.login-area');
     if (!loginArea) return;
 
-    // Verifica sessão atual no Supabase
-    // Usa window.supabase para garantir que pegamos a instância global inicializada
-    const sbClient = window.supabase || supabase;
+    const sbClient = window.supabase;
+
+    if (!sbClient || !sbClient.auth) {
+        console.warn("Supabase ainda não carregou no header.");
+        return;
+    }
+
     const { data: { user } } = await sbClient.auth.getUser();
 
     if (user) {
@@ -33,7 +37,6 @@ async function setupHeader() {
         let isAdmin = false;
 
         try {
-            // Busca Nome e Status de Admin
             const { data: perfil } = await sbClient
                 .from('usu_cadastro')
                 .select('NOME_USU, admin')
@@ -42,16 +45,14 @@ async function setupHeader() {
 
             if (perfil) {
                 if (perfil.NOME_USU) primeiroNome = perfil.NOME_USU.split(' ')[0];
-                if (perfil.admin === 1) isAdmin = true; // Verifica se é admin
+                if (perfil.admin === 1) isAdmin = true;
             }
         } catch (error) {
             console.log('Perfil ainda não criado ou erro ao buscar dados.');
         }
 
-        // Monta o HTML dos botões
         let buttonsHTML = '';
 
-        // Se for admin, adiciona o botão do painel ESTILIZADO
         if (isAdmin) {
             buttonsHTML += `
                 <a href="admin.html" style="background-color: #333; color: #f0c029; border: 1px solid #f0c029; padding: 6px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.9em; margin-right: 15px; transition: 0.3s; display: inline-flex; align-items: center; gap: 6px;" onmouseover="this.style.backgroundColor='#f0c029'; this.style.color='#000';" onmouseout="this.style.backgroundColor='#333'; this.style.color='#f0c029';">
@@ -60,7 +61,6 @@ async function setupHeader() {
             `;
         }
 
-        // Botão de Perfil (Minha Conta)
         buttonsHTML += `
             <a href="perfil.html" class="btn-user-logged" style="color: #f0c029; text-decoration: none; margin-right: 15px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;">
                 <i class="fas fa-user-circle"></i> ${primeiroNome}
@@ -72,7 +72,6 @@ async function setupHeader() {
 
         loginArea.innerHTML = buttonsHTML;
 
-        // Adiciona evento de Logout
         document.getElementById('btn-logout').addEventListener('click', async() => {
             await sbClient.auth.signOut();
             window.location.href = 'index.html';
@@ -85,7 +84,6 @@ async function setupHeader() {
             <a href="cadastro.html" class="btn-cta" style="background-color: #f0c029; color: #1a1a1a; padding: 8px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; transition: background 0.3s; display: inline-block;">Criar Conta</a>
         `;
 
-        // Adiciona evento para abrir o modal de login
         const btnOpenLogin = document.getElementById('btn-open-login');
         if (btnOpenLogin) {
             btnOpenLogin.addEventListener('click', (e) => {
@@ -97,14 +95,12 @@ async function setupHeader() {
     }
 }
 
-// --- RODAPÉ (3 COLUNAS, SEM LOGO) ---
+// --- RODAPÉ COM LINKS ---
 function updateFooter() {
     const footerContainer = document.querySelector('footer .container');
     if (footerContainer) {
         footerContainer.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; flex-wrap: wrap; gap: 20px;">
-                
-                <!-- COLUNA 1: ESQUERDA (Informações) -->
                 <div class="footer-col" style="flex: 1; min-width: 200px; text-align: left;">
                     <h4 style="color: #f0c029; margin-bottom: 15px; text-transform: uppercase; font-size: 0.9em; border-bottom: 1px solid #444; display: inline-block; padding-bottom: 5px;">SR Service</h4>
                     <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;">CNPJ: 00.000.000/0001-00</p>
@@ -113,7 +109,6 @@ function updateFooter() {
                     <p style="margin: 15px 0 0 0; color: #777; font-size: 0.8em;">&copy; 2025 Todos os direitos reservados.</p>
                 </div>
 
-                <!-- COLUNA 2: MEIO (Mapa do Site) -->
                 <div class="footer-col" style="flex: 1; min-width: 200px; text-align: center;">
                     <h4 style="color: #f0c029; margin-bottom: 15px; text-transform: uppercase; font-size: 0.9em;">Mapa do Site</h4>
                     <ul style="list-style: none; padding: 0; margin: 0; line-height: 2;">
@@ -125,7 +120,6 @@ function updateFooter() {
                     </ul>
                 </div>
                 
-                <!-- COLUNA 3: DIREITA (Contato) -->
                 <div class="footer-col" style="flex: 1; min-width: 200px; text-align: right;">
                     <h4 style="color: #f0c029; margin-bottom: 15px; text-transform: uppercase; font-size: 0.9em; border-bottom: 1px solid #444; display: inline-block; padding-bottom: 5px;">Contato</h4>
                     <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;"><i class="fas fa-phone" style="margin-right:8px; color:#f0c029;"></i> (14) 99700-0206</p>
@@ -142,12 +136,12 @@ function updateFooter() {
     }
 }
 
-// --- MODAL DE LOGIN (HTML + Lógica) ---
+// --- MODAL DE LOGIN (Z-INDEX: 10000) ---
 function injectLoginModalHTML() {
     if (document.getElementById('login-modal')) return;
 
     const modalHTML = `
-    <div id="login-modal" class="modal-overlay" style="display: none;">
+    <div id="login-modal" class="modal-overlay" style="display: none; z-index: 10000;">
         <div class="modal-content login-content" style="max-width: 350px; text-align: center; background: #222; border: 1px solid #f0c029; padding: 30px; border-radius: 8px;">
             <div class="modal-header" style="border-bottom: 1px solid #444; margin-bottom: 20px; padding-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
                 <h3 style="margin: 0; color: #f0c029;">Acessar Conta</h3>
@@ -176,25 +170,21 @@ function injectLoginModalHTML() {
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-    // Fechar modal
     document.getElementById('close-login').addEventListener('click', () => {
         document.getElementById('login-modal').style.display = 'none';
     });
 
-    // Fechar clicando fora
     window.addEventListener('click', (e) => {
         const modal = document.getElementById('login-modal');
         if (e.target === modal) modal.style.display = 'none';
     });
 
-    // Lógica do botão "Esqueci minha senha"
     document.getElementById('link-esqueci-senha').addEventListener('click', (e) => {
         e.preventDefault();
-        document.getElementById('login-modal').style.display = 'none'; // Fecha login
-        handleForgotPassword(); // Abre fluxo de recuperação
+        document.getElementById('login-modal').style.display = 'none';
+        handleForgotPassword();
     });
 
-    // Submissão do Login
     document.getElementById('form-login-modal').addEventListener('submit', async(e) => {
         e.preventDefault();
         const email = document.getElementById('email-login').value;
@@ -205,33 +195,36 @@ function injectLoginModalHTML() {
         btn.innerText = 'Verificando...';
         btn.disabled = true;
 
-        const sbClient = window.supabase || supabase;
-        const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
+        const sbClient = window.supabase;
+        if (!sbClient) {
+            alert('Erro de sistema: Cliente não carregado.');
+            return;
+        }
+
+        const { error } = await sbClient.auth.signInWithPassword({ email, password });
 
         if (error) {
+            // Modal de erro aparecerá NA FRENTE
             showCustomModal('E-mail ou senha incorretos.', 'Erro de Login');
             btn.innerText = originalText;
             btn.disabled = false;
         } else {
-            window.location.reload(); // Recarrega para atualizar o header
+            window.location.reload();
         }
     });
 }
 
-// --- FLUXO DE RECUPERAÇÃO DE SENHA (MODAL) ---
+// --- RECUPERAÇÃO DE SENHA ---
 async function handleForgotPassword() {
-    // Pergunta o email via modal
     const email = await showCustomModal("Digite seu e-mail para receber o link de recuperação:", "Recuperar Senha", true);
 
     if (email) {
         let redirectUrl = window.location.origin + '/recuperar_senha.html';
-
-        // Ajuste para desenvolvimento local (Live Server, etc)
         if (window.location.protocol === 'file:') {
             console.warn('Supabase Auth não funciona bem com protocolo file://. Use um servidor local.');
         }
 
-        const sbClient = window.supabase || supabase;
+        const sbClient = window.supabase;
         const { error } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
 
         if (error) {
@@ -242,11 +235,11 @@ async function handleForgotPassword() {
     }
 }
 
-// --- MODAL DE MENSAGENS (CUSTOMIZADO) ---
+// --- MODAL CUSTOMIZADO (Z-INDEX: 11000) ---
 function injectCustomModalHTML() {
     if (!document.getElementById('custom-modal')) {
         const modalHTML = `
-        <div id="custom-modal" class="modal-overlay" style="display: none;">
+        <div id="custom-modal" class="modal-overlay" style="display: none; z-index: 11000;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h3 id="modal-title">Aviso</h3>
@@ -263,10 +256,9 @@ function injectCustomModalHTML() {
         </div>`;
         document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-        // Estilos CSS injetados dinamicamente para garantir que carreguem
         const style = document.createElement('style');
         style.innerHTML = `
-            .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; justify-content: center; align-items: center; }
+            .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; }
             .modal-content { background: #1a1a1a; border: 1px solid #f0c029; color: #fff; padding: 25px; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); animation: fadeIn 0.3s; }
             .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
             .modal-header h3 { color: #f0c029; margin: 0; font-size: 1.4em; }
@@ -285,7 +277,6 @@ function injectCustomModalHTML() {
     }
 }
 
-// Função global para chamar o modal (retorna Promise para usar com await)
 window.showCustomModal = function(message, title = 'Aviso', hasInput = false) {
     return new Promise((resolve) => {
         const modal = document.getElementById('custom-modal');
@@ -306,7 +297,6 @@ window.showCustomModal = function(message, title = 'Aviso', hasInput = false) {
 
         modal.style.display = 'flex';
 
-        // Clona o botão para remover listeners antigos
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
 
@@ -317,7 +307,6 @@ window.showCustomModal = function(message, title = 'Aviso', hasInput = false) {
         };
 
         newBtn.addEventListener('click', close);
-        // Fecha clicando no X ou fora também (opcional)
         closeBtn.onclick = close;
         modal.onclick = (e) => { if (e.target === modal) close(); };
     });

@@ -1,9 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Garante que o Supabase está acessível
-    const sbClient = window.supabase || supabase;
-    if (!sbClient) {
-        console.error('Erro CRÍTICO: Cliente Supabase não encontrado.');
-        alert('Erro interno: Sistema não inicializado. Recarregue a página.');
+    const sbClient = window.supabase;
+
+    if (!sbClient || !sbClient.auth) {
+        console.error('Erro CRÍTICO: Cliente Supabase não encontrado ou mal inicializado.');
+        if (typeof showCustomModal === 'function') showCustomModal('Erro de sistema: Conexão com banco de dados falhou.', 'Erro Fatal');
         return;
     }
 
@@ -17,12 +17,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (value.length > 14) value = value.slice(0, 14);
 
             if (value.length <= 11) {
-                // CPF
                 value = value.replace(/(\d{3})(\d)/, "$1.$2");
                 value = value.replace(/(\d{3})(\d)/, "$1.$2");
                 value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
             } else {
-                // CNPJ
                 value = value.replace(/^(\d{2})(\d)/, "$1.$2");
                 value = value.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
                 value = value.replace(/\.(\d{3})(\d)/, ".$1/$2");
@@ -35,7 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (telInput) {
         telInput.addEventListener('input', (e) => {
             let value = e.target.value.replace(/\D/g, "");
-            // Limita a 11 dígitos para evitar erro no servidor
             if (value.length > 11) value = value.slice(0, 11);
 
             if (value.length > 10) {
@@ -49,73 +46,45 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- SUBMISSÃO DO FORMULÁRIO ---
+    // --- SUBMISSÃO ---
     const form = document.getElementById('form-cadastro');
     if (form) {
         form.addEventListener('submit', async(e) => {
             e.preventDefault();
 
-            // Captura de elementos com verificação de segurança
-            const elNome = document.getElementById('nome');
-            const elEmail = document.getElementById('email');
-            const elSenha = document.getElementById('senha');
-            const elConfirmSenha = document.getElementById('confirmSenha');
-            const elCpf = document.getElementById('cpf');
-            const elTel = document.getElementById('tel');
-            const elEndereco = document.getElementById('endereco');
+            const nome = document.getElementById('nome').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const senha = document.getElementById('senha').value;
+            const confirmSenha = document.getElementById('confirmSenha').value;
+            const cpfRaw = document.getElementById('cpf').value;
+            const telRaw = document.getElementById('tel').value;
+            const endereco = document.getElementById('endereco').value.trim();
 
-            if (!elNome || !elEmail || !elSenha || !elConfirmSenha || !elCpf || !elTel) {
-                return alert('Erro: Um ou mais campos do formulário não foram encontrados no HTML.');
-            }
+            if (senha !== confirmSenha) return showCustomModal('As senhas não conferem.', 'Erro');
+            if (senha.length < 6) return showCustomModal('A senha deve ter no mínimo 6 caracteres.', 'Erro');
 
-            const nome = elNome.value.trim();
-            const email = elEmail.value.trim();
-            const senha = elSenha.value;
-            const confirmSenha = elConfirmSenha.value;
-            const cpfRaw = elCpf.value;
-            const telRaw = elTel.value;
-            const endereco = elEndereco ? elEndereco.value.trim() : '';
-
-            // --- VALIDAÇÕES ---
-
-            // 1. Senha
-            if (senha !== confirmSenha) {
-                return showCustomModal('As senhas não conferem.', 'Erro');
-            }
-            if (senha.length < 6) {
-                return showCustomModal('A senha deve ter no mínimo 6 caracteres.', 'Erro');
-            }
-
-            // 2. Email
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                return showCustomModal('E-mail inválido.', 'Erro');
-            }
+            if (!emailRegex.test(email)) return showCustomModal('E-mail inválido.', 'Erro');
 
-            // 3. Telefone
             const telLimpo = telRaw.replace(/\D/g, '');
-            if (telLimpo.length < 10 || telLimpo.length > 11) {
-                return showCustomModal('Telefone inválido (deve ter DDD + número).', 'Erro');
-            }
+            if (telLimpo.length < 10 || telLimpo.length > 11) return showCustomModal('Telefone inválido (DDD + número).', 'Erro');
 
-            // 4. CPF/CNPJ
             const docLimpo = cpfRaw.replace(/\D/g, '');
             if (docLimpo.length === 11) {
                 if (!validarCPF(docLimpo)) return showCustomModal('CPF inválido.', 'Erro');
             } else if (docLimpo.length === 14) {
                 if (!validarCNPJ(docLimpo)) return showCustomModal('CNPJ inválido.', 'Erro');
             } else {
-                return showCustomModal('Documento inválido (CPF ou CNPJ).', 'Erro');
+                return showCustomModal('Documento inválido.', 'Erro');
             }
 
-            // --- ENVIO ---
             const btn = form.querySelector('button[type="submit"]');
             const originalText = btn.innerText;
             btn.disabled = true;
             btn.innerText = 'Cadastrando...';
 
             try {
-                // A. Cria usuário no Auth
+                // 1. Cria usuário no Auth
                 const { data: authData, error: authError } = await sbClient.auth.signUp({
                     email: email,
                     password: senha
@@ -127,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error('Este e-mail já está cadastrado.');
                 }
 
-                // B. Salva perfil no Banco
+                // 2. Salva perfil no Banco
                 if (authData.user) {
                     const { error: insertError } = await sbClient.from('usu_cadastro').insert({
                         NOME_USU: nome,
@@ -140,12 +109,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
 
                     if (insertError) {
-                        console.error('Erro ao salvar perfil:', insertError);
-                        // Não bloqueia o fluxo totalmente se o Auth funcionou, mas avisa
-                        throw new Error('Conta criada, mas erro ao salvar dados: ' + insertError.message);
+                        console.error('Erro ao salvar dados complementares:', insertError);
                     }
 
-                    await showCustomModal('Cadastro realizado com sucesso! Faça login.', 'Sucesso');
+                    // AQUI ESTÁ A CORREÇÃO:
+                    // O await faz o código parar e esperar você clicar no OK
+                    await showCustomModal('Cadastro realizado com sucesso! Verifique seu e-mail para continuar.', 'Sucesso');
+
                     window.location.href = 'index.html';
                 }
 
@@ -153,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error(error);
                 let msg = error.message;
                 if (msg.includes('already registered')) msg = 'Este e-mail já está em uso.';
-                showCustomModal(msg, 'Erro no Cadastro');
+                await showCustomModal(msg, 'Erro no Cadastro');
             } finally {
                 btn.disabled = false;
                 btn.innerText = originalText;
@@ -162,7 +132,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Funções de Validação (Mantidas)
 function validarCPF(cpf) {
     if (/^(\d)\1+$/.test(cpf)) return false;
     let soma = 0,
