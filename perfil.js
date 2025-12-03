@@ -7,18 +7,18 @@ document.addEventListener('DOMContentLoaded', async() => {
         return;
     }
 
-    // --- MÁSCARAS DE INPUT (Visual) ---
-
-    // 1. CPF/CNPJ
+    // --- MÁSCARA DE CPF/CNPJ ---
     function aplicarMascaraCpf(value) {
-        value = value.replace(/\D/g, "");
+        value = value.replace(/\D/g, ""); // Remove letras
         if (value.length > 14) value = value.slice(0, 14);
 
         if (value.length <= 11) {
+            // Máscara CPF
             value = value.replace(/(\d{3})(\d)/, "$1.$2");
             value = value.replace(/(\d{3})(\d)/, "$1.$2");
             value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
         } else {
+            // Máscara CNPJ
             value = value.replace(/^(\d{2})(\d)/, "$1.$2");
             value = value.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
             value = value.replace(/\.(\d{3})(\d)/, ".$1/$2");
@@ -27,24 +27,6 @@ document.addEventListener('DOMContentLoaded', async() => {
         return value;
     }
 
-    // 2. Telefone
-    function aplicarMascaraTelefone(value) {
-        value = value.replace(/\D/g, "");
-        if (value.length > 11) value = value.slice(0, 11);
-
-        if (value.length > 10) {
-            // (11) 91234-5678
-            value = value.replace(/^(\d{2})(\d)/, "($1) $2");
-            value = value.replace(/(\d{5})(\d)/, "$1-$2");
-        } else {
-            // (11) 1234-5678
-            value = value.replace(/^(\d{2})(\d)/, "($1) $2");
-            value = value.replace(/(\d{4})(\d)/, "$1-$2");
-        }
-        return value;
-    }
-
-    // Aplica máscaras nos eventos de input
     const cpfInput = document.getElementById('cpf');
     if (cpfInput) {
         cpfInput.addEventListener('input', (e) => {
@@ -52,10 +34,21 @@ document.addEventListener('DOMContentLoaded', async() => {
         });
     }
 
+    // --- MÁSCARA DE TELEFONE ---
+    function formatarTelefone(v) {
+        v = v.replace(/\D/g, "");
+        if (v.length > 11) v = v.slice(0, 11); // Limita a 11 dígitos
+
+        if (v.length > 10) return v.replace(/^(\d{2})(\d)(\d{4})(\d{4})/, "($1) $2$3-$4"); // (XX) 9XXXX-XXXX
+        if (v.length > 6) return v.replace(/^(\d{2})(\d{4})(\d{4})/, "($1) $2-$3"); // (XX) XXXX-XXXX
+        if (v.length > 2) return v.replace(/^(\d{2})(\d{0,5})/, "($1) $2"); // (XX) ...
+        return v;
+    }
+
     const telInput = document.getElementById('tel');
     if (telInput) {
         telInput.addEventListener('input', (e) => {
-            e.target.value = aplicarMascaraTelefone(e.target.value);
+            e.target.value = formatarTelefone(e.target.value);
         });
     }
 
@@ -78,13 +71,13 @@ document.addEventListener('DOMContentLoaded', async() => {
         document.getElementById('nome').value = perfil.NOME_USU || '';
         document.getElementById('email').value = perfil.EMAIL_USU || user.email;
         document.getElementById('cpf').value = perfil.CPF_CNPJ_USU ? aplicarMascaraCpf(perfil.CPF_CNPJ_USU) : '';
-        document.getElementById('tel').value = perfil.TEL_USU ? aplicarMascaraTelefone(perfil.TEL_USU.toString()) : '';
+        // Carrega e formata o telefone vindo do banco
+        document.getElementById('tel').value = perfil.TEL_USU ? formatarTelefone(perfil.TEL_USU.toString()) : '';
         document.getElementById('endereco').value = perfil.END_USU || '';
     } else {
         document.getElementById('email').value = user.email;
     }
 
-    // Botões de Edição
     document.querySelectorAll('.edit-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const input = e.currentTarget.parentElement.querySelector('input');
@@ -98,115 +91,89 @@ document.addEventListener('DOMContentLoaded', async() => {
         });
     });
 
-    // --- SALVAR COM VALIDAÇÃO PERSONALIZADA ---
     const form = document.getElementById('form-perfil');
     form.addEventListener('submit', async(e) => {
         e.preventDefault();
 
-        const nome = document.getElementById('nome').value.trim();
-        const cpfRaw = document.getElementById('cpf').value.trim();
-        const telRaw = document.getElementById('tel').value.trim();
-        const endereco = document.getElementById('endereco').value.trim();
+        const nome = document.getElementById('nome').value;
+        const cpfRaw = document.getElementById('cpf').value;
+        const telRaw = document.getElementById('tel').value; // Pega o valor do telefone
+        const endereco = document.getElementById('endereco').value;
         const novaSenha = document.getElementById('nova_senha').value;
         const confirmaSenha = document.getElementById('confirma_senha').value;
 
-        // 1. Validação de Campos Vazios
-        if (!nome || !cpfRaw || !telRaw || !endereco) {
-            showCustomModal('Todos os campos são obrigatórios. Por favor, preencha tudo.', 'Campos Vazios');
-            return;
-        }
-
-        // 2. Validação de Nome (Sem números ou símbolos)
-        // Permite letras (com acentos) e espaços.
-        const nomeRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/;
-        if (!nomeRegex.test(nome)) {
-            showCustomModal('O nome contém caracteres inválidos. Use apenas letras e espaços.', 'Nome Inválido');
-            return;
-        }
-        if (nome.split(' ').length < 2) {
-            showCustomModal('Por favor, informe seu nome completo (Nome e Sobrenome).', 'Nome Incompleto');
-            return;
-        }
-
-        // 3. Validação de Telefone (Tamanho)
-        const telLimpo = telRaw.replace(/\D/g, '');
+        // VALIDAÇÃO DE TELEFONE
+        const telLimpo = telRaw.replace(/\D/g, ''); // Apenas números
         if (telLimpo.length < 10 || telLimpo.length > 11) {
-            showCustomModal('O telefone informado é inválido. Digite o DDD + Número.', 'Telefone Inválido');
-            return;
+            // Se tiver menos de 10 dígitos (incompleto) ou mais de 11 (invalido), mostra erro
+            if (typeof showCustomModal === 'function') showCustomModal('Telefone inválido. Insira DDD + Número (mínimo 10 dígitos).', 'Erro de Validação');
+            return; // Para o salvamento
         }
 
-        // 4. Validação de CPF/CNPJ (Matemática)
+        // VALIDAÇÃO DE CPF/CNPJ
         const cpfLimpo = cpfRaw.replace(/\D/g, '');
         if (cpfLimpo.length === 11) {
             if (!validarCPF(cpfLimpo)) {
-                showCustomModal('O CPF informado não é válido. Verifique os números.', 'CPF Inválido');
+                if (typeof showCustomModal === 'function') showCustomModal('CPF inválido.', 'Erro');
                 return;
             }
         } else if (cpfLimpo.length === 14) {
             if (!validarCNPJ(cpfLimpo)) {
-                showCustomModal('O CNPJ informado não é válido. Verifique os números.', 'CNPJ Inválido');
+                if (typeof showCustomModal === 'function') showCustomModal('CNPJ inválido.', 'Erro');
                 return;
             }
         } else {
-            showCustomModal('O documento deve ter 11 dígitos (CPF) ou 14 dígitos (CNPJ).', 'Documento Inválido');
+            if (typeof showCustomModal === 'function') showCustomModal('Documento inválido (deve ser CPF ou CNPJ).', 'Erro');
             return;
         }
 
-        // --- SE PASSOU EM TUDO, SALVA NO BANCO ---
         const { error: updateError } = await sbClient
             .from('usu_cadastro')
             .update({
                 NOME_USU: nome,
-                CPF_CNPJ_USU: cpfRaw, // Salva formatado
-                TEL_USU: telLimpo, // Salva limpo (apenas números)
+                CPF_CNPJ_USU: cpfRaw,
+                TEL_USU: telLimpo, // Salva o telefone limpo (apenas números) no banco
                 END_USU: endereco
             })
             .eq('EMAIL_USU', user.email);
 
         if (updateError) {
-            showCustomModal('Erro ao salvar no banco de dados: ' + updateError.message, 'Erro de Sistema');
+            if (typeof showCustomModal === 'function') showCustomModal('Erro ao atualizar: ' + updateError.message, 'Erro');
             return;
         }
 
-        // Atualização de Senha (Opcional)
         if (novaSenha) {
             if (novaSenha.length < 6) {
-                showCustomModal('A nova senha deve ter no mínimo 6 caracteres.', 'Senha Fraca');
+                if (typeof showCustomModal === 'function') showCustomModal('Senha muito curta.', 'Erro');
                 return;
             }
             if (novaSenha !== confirmaSenha) {
-                showCustomModal('A confirmação de senha não confere.', 'Senhas Divergentes');
+                if (typeof showCustomModal === 'function') showCustomModal('Senhas não coincidem.', 'Erro');
                 return;
             }
 
             const { error: passError } = await sbClient.auth.updateUser({ password: novaSenha });
 
             if (passError) {
-                showCustomModal('Erro ao atualizar senha: ' + passError.message, 'Erro');
+                showCustomModal('Erro ao alterar senha: ' + passError.message, 'Erro');
             } else {
-                await showCustomModal('Senha alterada com sucesso! Você será desconectado.', 'Sucesso');
+                await showCustomModal('Senha alterada com sucesso! Você será deslogado.', 'Sucesso');
                 await sbClient.auth.signOut();
                 window.location.href = 'index.html';
                 return;
             }
         }
 
-        // Sucesso Final
-        await showCustomModal('Seus dados foram atualizados com sucesso!', 'Perfil Salvo');
+        if (typeof showCustomModal === 'function') await showCustomModal('Perfil atualizado com sucesso.', 'Sucesso');
 
-        // Bloqueia inputs novamente para indicar que salvou
-        document.querySelectorAll('#form-perfil input').forEach(i => {
-            if (i.id !== 'nova_senha' && i.id !== 'confirma_senha') {
-                i.setAttribute('readonly', true);
-                i.style.borderColor = '#555';
-            } else {
-                i.value = ''; // Limpa campos de senha
-            }
+        document.querySelectorAll('#form-perfil input[type="text"], #form-perfil input[type="tel"]').forEach(i => {
+            i.setAttribute('readonly', true);
+            i.style.borderColor = '#555';
         });
     });
 });
 
-// --- ALGORITMOS DE VALIDAÇÃO ---
+// FUNÇÕES DE VALIDAÇÃO (Adicionadas ao final)
 function validarCPF(cpf) {
     if (/^(\d)\1+$/.test(cpf)) return false;
     let soma = 0,
