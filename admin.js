@@ -58,18 +58,20 @@ document.addEventListener('DOMContentLoaded', async() => {
                 return;
             }
 
-            // 2. Coleta IDs únicos de usuários para buscar de uma vez (BATCH FETCH)
+            // 2. Coleta IDs únicos de usuários
             const userIds = [...new Set(orcamentos.map(o => o.fk_cod_usuario).filter(id => id))];
 
             let mapaUsuarios = {};
 
             if (userIds.length > 0) {
+                // Busca dados dos usuários
                 const { data: usuarios, error: userError } = await sbClient
                     .from('usu_cadastro')
-                    .select('COD_USUARIO, END_USU, TEL_USU')
+                    .select('COD_USUARIO, END_USU, TEL_USU, EMAIL_USU')
                     .in('COD_USUARIO', userIds);
 
                 if (!userError && usuarios) {
+                    // Cria mapa indexado pelo ID para acesso instantâneo
                     mapaUsuarios = usuarios.reduce((acc, u) => {
                         acc[u.COD_USUARIO] = u;
                         return acc;
@@ -77,9 +79,10 @@ document.addEventListener('DOMContentLoaded', async() => {
                 }
             }
 
-            // 3. Monta o objeto final combinando Orçamento + Cadastro do Usuário
+            // 3. Monta o objeto final
             const orcamentosCompletos = orcamentos.map(orc => {
-                const dadosUser = mapaUsuarios[orc.fk_cod_usuario] || null;
+                // Tenta achar o usuário pelo ID. Se não achar, retorna objeto vazio seguro.
+                const dadosUser = mapaUsuarios[orc.fk_cod_usuario] || {};
                 return {...orc, usu_cadastro: dadosUser };
             });
 
@@ -110,31 +113,33 @@ document.addEventListener('DOMContentLoaded', async() => {
             const dataStr = dateObj.toLocaleDateString('pt-BR');
             const horaStr = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-            // Dados do Orçamento (Formulário)
+            // Dados do Cliente (Fallback seguro)
             const clienteNome = orc.NOME_CONTATO || 'Desconhecido';
             const clienteEmpresa = orc.NOME_EMPRESA ? `(${orc.NOME_EMPRESA})` : '';
-            const clienteEmail = orc.EMAIL_CONTATO || 'Sem e-mail';
 
-            // --- DADOS DO CADASTRO E GOOGLE MAPS ---
-            let textoEndereco = 'Endereço não cadastrado';
-            let clienteTelBanco = '';
+            // Tenta pegar email do cadastro, senão do formulário
+            const clienteEmail = (orc.usu_cadastro && orc.usu_cadastro.EMAIL_USU) ? orc.usu_cadastro.EMAIL_USU : (orc.EMAIL_CONTATO || 'Sem e-mail');
 
-            if (orc.usu_cadastro) {
-                if (orc.usu_cadastro.END_USU) textoEndereco = orc.usu_cadastro.END_USU;
-                if (orc.usu_cadastro.TEL_USU) clienteTelBanco = orc.usu_cadastro.TEL_USU;
-            }
+            // --- ENDEREÇO E TELEFONE ---
+            // Verifica se existe o objeto usu_cadastro e se tem o campo END_USU
+            const enderecoCadastrado = (orc.usu_cadastro && orc.usu_cadastro.END_USU) ? orc.usu_cadastro.END_USU : null;
 
-            // Cria o link do Google Maps
-            let displayEndereco = textoEndereco;
-            if (textoEndereco !== 'Endereço não cadastrado' && textoEndereco.trim() !== '') {
-                const encodedAddress = encodeURIComponent(textoEndereco);
-                // Link formatado para abrir busca no Maps
-                displayEndereco = `<a href="https://www.google.com/maps/search/?api=1&query=${encodedAddress}" target="_blank" style="color: #f0c029; text-decoration: none; border-bottom: 1px dotted #f0c029; transition: 0.3s;" title="Ver no Google Maps">${textoEndereco} <i class="fas fa-map-marker-alt" style="font-size: 0.8em; margin-left: 3px;"></i></a>`;
+            // Link Google Maps
+            let displayEndereco = '<span style="color: #666; font-style: italic;">Endereço não disponível</span>';
+
+            if (enderecoCadastrado && enderecoCadastrado.trim() !== '') {
+                // Cria link para Google Maps
+                const urlMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoCadastrado)}`;
+                displayEndereco = `
+                    <a href="${urlMaps}" target="_blank" style="color: #f0c029; text-decoration: none; border-bottom: 1px dotted #f0c029;" title="Ver no Google Maps">
+                        ${enderecoCadastrado} <i class="fas fa-map-marker-alt" style="font-size: 0.8em; margin-left: 3px;"></i>
+                    </a>`;
             }
 
             // Telefone
-            const clienteTelOrcamento = orc.TELEFONE_CONTATO;
-            let telefoneFinal = clienteTelOrcamento || clienteTelBanco || '';
+            const telBanco = (orc.usu_cadastro && orc.usu_cadastro.TEL_USU) ? orc.usu_cadastro.TEL_USU : '';
+            const telForm = orc.TELEFONE_CONTATO || '';
+            let telefoneFinal = telBanco || telForm;
 
             if (telefoneFinal) telefoneFinal = formatarTelefone(telefoneFinal.toString());
             else telefoneFinal = 'Sem telefone';
@@ -142,11 +147,10 @@ document.addEventListener('DOMContentLoaded', async() => {
             const descCompleta = orc.DESCRICAO || 'Sem descrição.';
             const statusAtual = orc.STATUS_ORCAMENTO || 'Não Visualizado';
 
-            // Links Contato
+            // Link Whats
+            const whatsLink = telefoneFinal !== 'Sem telefone' ? `<a href="https://wa.me/55${telefoneFinal.replace(/\D/g,'')}" target="_blank" style="color: #2ecc71; text-decoration: none; margin-left: 5px;" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>` : '';
             const emailLink = `<a href="mailto:${clienteEmail}" title="Enviar e-mail" style="color: #f0c029; text-decoration: none;">${clienteEmail}</a>`;
-            const whatsLink = telefoneFinal !== 'Sem telefone' ? `<a href="https://wa.me/55${telefoneFinal.replace(/\D/g,'')}" target="_blank" style="color: #2ecc71; text-decoration: none; margin-left: 5px;" title="Chamar no WhatsApp"><i class="fab fa-whatsapp"></i></a>` : '';
 
-            // Renderiza a linha
             tr.innerHTML = `
                 <td style="color: #f0c029;"><strong>#${orc.COD_ORCAMENTO}</strong></td>
                 <td>
@@ -158,8 +162,9 @@ document.addEventListener('DOMContentLoaded', async() => {
                     <div class="client-email">${emailLink}</div>
                     <div style="font-size: 0.85em; color: #ccc;">${telefoneFinal} ${whatsLink}</div>
                 </td>
-                <!-- Endereço com Link do Maps -->
-                <td style="max-width: 200px; font-size: 0.9em; color: #f0c029;">${displayEndereco}</td>
+                <td style="max-width: 200px; font-size: 0.9em;">
+                    ${displayEndereco}
+                </td>
                 <td style="color: #ddd;">${orc.TIPO_SERVICO}</td>
                 
                 <td style="text-align: center;">
@@ -168,11 +173,14 @@ document.addEventListener('DOMContentLoaded', async() => {
                     </button>
                 </td>
 
-                <td>
-                    <select class="status-select" data-id="${orc.COD_ORCAMENTO}" style="padding: 5px; border-radius: 4px; background: #333; color: #fff; border: 1px solid #555;">
+                <td style="min-width: 160px;"> <!-- Largura aumentada para não cortar o texto -->
+                    <select class="status-select" data-id="${orc.COD_ORCAMENTO}" style="width: 100%; padding: 8px; border-radius: 4px; background: #333; color: #fff; border: 1px solid #555; cursor: pointer;">
                         <option value="Não Visualizado" ${statusAtual === 'Não Visualizado' ? 'selected' : ''}>Não Visualizado</option>
                         <option value="Pendente" ${statusAtual === 'Pendente' ? 'selected' : ''}>Pendente</option>
+                        <option value="Em Análise" ${statusAtual === 'Em Análise' ? 'selected' : ''}>Em Análise</option>
+                        <option value="Aprovado" ${statusAtual === 'Aprovado' ? 'selected' : ''}>Aprovado</option>
                         <option value="Concluido" ${statusAtual === 'Concluido' ? 'selected' : ''}>Concluído</option>
+                        <option value="Recusado" ${statusAtual === 'Recusado' ? 'selected' : ''}>Recusado</option>
                     </select>
                 </td>
             `;
