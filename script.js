@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async() => {
     }
 });
 
-// --- CONFIGURAÇÃO DO CABEÇALHO (AUTH) ---
+// --- CONFIGURAÇÃO DO CABEÇALHO ---
 async function setupHeader() {
     const loginArea = document.querySelector('.login-area');
     if (!loginArea) return;
@@ -30,7 +30,6 @@ async function setupHeader() {
     const { data: { user } } = await sbClient.auth.getUser();
 
     if (user) {
-        // --- USUÁRIO LOGADO ---
         let primeiroNome = 'Minha Conta';
         let isAdmin = false;
 
@@ -49,16 +48,13 @@ async function setupHeader() {
 
         let buttonsHTML = '';
 
-        // LÓGICA DE EXIBIÇÃO DE BOTÕES
         if (isAdmin) {
-            // SE FOR ADMIN: Mostra APENAS o Painel
             buttonsHTML += `
                 <a href="admin.html" style="background-color: #333; color: #f0c029; border: 1px solid #f0c029; padding: 6px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.9em; margin-right: 15px; transition: 0.3s; display: inline-flex; align-items: center; gap: 6px;" onmouseover="this.style.backgroundColor='#f0c029'; this.style.color='#000';" onmouseout="this.style.backgroundColor='#333'; this.style.color='#f0c029';">
                     <i class="fas fa-user-shield"></i> Painel de Admin
                 </a>
             `;
         } else {
-            // SE FOR CLIENTE: Mostra "Meus Orçamentos" (Estilizado igual ao Admin)
             buttonsHTML += `
                 <a href="consultar_orcamento.html" style="background-color: #333; color: #f0c029; border: 1px solid #f0c029; padding: 6px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.9em; margin-right: 15px; transition: 0.3s; display: inline-flex; align-items: center; gap: 6px;" onmouseover="this.style.backgroundColor='#f0c029'; this.style.color='#000';" onmouseout="this.style.backgroundColor='#333'; this.style.color='#f0c029';">
                     <i class="fas fa-list-ul"></i> Meus Orçamentos
@@ -66,7 +62,6 @@ async function setupHeader() {
             `;
         }
 
-        // Botão Perfil (Comum a todos)
         buttonsHTML += `
             <a href="perfil.html" class="btn-user-logged" style="color: #f0c029; text-decoration: none; margin-right: 15px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;">
                 <i class="fas fa-user-circle"></i> ${primeiroNome}
@@ -84,7 +79,6 @@ async function setupHeader() {
         });
 
     } else {
-        // --- USUÁRIO DESLOGADO ---
         loginArea.innerHTML = `
             <a href="#" id="btn-open-login" style="color: #fff; text-decoration: none; margin-right: 15px; font-weight: 500;">Entrar</a>
             <a href="cadastro.html" class="btn-cta" style="background-color: #f0c029; color: #1a1a1a; padding: 8px 15px; border-radius: 4px; text-decoration: none; font-weight: bold;">Criar Conta</a>
@@ -100,44 +94,42 @@ async function setupHeader() {
     }
 }
 
-// --- RODAPÉ ---
-function updateFooter() {
-    const footerContainer = document.querySelector('footer .container');
-    if (footerContainer) {
-        footerContainer.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; flex-wrap: wrap; gap: 20px;">
-                <div class="footer-col" style="flex: 1; min-width: 200px; text-align: left;">
-                    <h4 style="color: #f0c029; margin-bottom: 15px; text-transform: uppercase; font-size: 0.9em; border-bottom: 1px solid #444; display: inline-block; padding-bottom: 5px;">SR Service</h4>
-                    <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;">CNPJ: 00.000.000/0001-00</p>
-                    <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;">Brasílio Custódio de Camargo, 109</p>
-                    <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;">CEP: 18890-762</p>
-                    <p style="margin: 15px 0 0 0; color: #777; font-size: 0.8em;">&copy; 2025 Todos os direitos reservados.</p>
-                </div>
+// --- RECUPERAÇÃO DE SENHA (COM VERIFICAÇÃO DE EMAIL) ---
+async function handleForgotPassword() {
+    const email = await showCustomModal("Digite seu e-mail para receber o link de recuperação:", "Recuperar Senha", true);
 
-                <div class="footer-col" style="flex: 1; min-width: 200px; text-align: center;">
-                    <h4 style="color: #f0c029; margin-bottom: 15px; text-transform: uppercase; font-size: 0.9em;">Mapa do Site</h4>
-                    <ul style="list-style: none; padding: 0; margin: 0; line-height: 2;">
-                        <li><a href="index.html" style="color: #ccc; text-decoration: none;">Início</a></li>
-                        <li><a href="servicos.html" style="color: #ccc; text-decoration: none;">Serviços</a></li>
-                        <li><a href="sobre_nos.html" style="color: #ccc; text-decoration: none;">Sobre Nós</a></li>
-                        <li><a href="orcamento.html" style="color: #ccc; text-decoration: none;">Solicitar Orçamento</a></li>
-                         <li><a href="politica_privacidade.html" style="color: #ccc; text-decoration: none;">Política de Privacidade</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-col" style="flex: 1; min-width: 200px; text-align: right;">
-                    <h4 style="color: #f0c029; margin-bottom: 15px; text-transform: uppercase; font-size: 0.9em; border-bottom: 1px solid #444; display: inline-block; padding-bottom: 5px;">Contato</h4>
-                    <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;"><i class="fas fa-phone" style="margin-right:8px; color:#f0c029;"></i> (14) 99700-0206</p>
-                    <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;"><i class="fas fa-envelope" style="margin-right:8px; color:#f0c029;"></i> adrekzo44@gmail.com</p>
-                    
-                    <div class="footer-social" style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 15px;">
-                        <a href="https://wa.me/5514997000206" target="_blank" style="color: #f0c029; font-size: 1.5em;"><i class="fab fa-whatsapp"></i></a>
-                        <a href="https://www.instagram.com/styvezatto/" target="_blank" style="color: #f0c029; font-size: 1.5em;"><i class="fab fa-instagram"></i></a>
-                        <a href="https://www.linkedin.com/in/adrian-ezequiel-5720503a0/" target="_blank" style="color: #f0c029; font-size: 1.5em;"><i class="fab fa-linkedin-in"></i></a>
-                    </div>
-                </div>
-            </div>
-        `;
+    if (email) {
+        const sbClient = window.supabase;
+
+        // 1. VERIFICA SE O EMAIL EXISTE NO BANCO DE DADOS
+        // Se não existir na tabela usu_cadastro, não adianta enviar link
+        const { data: userExists, error: searchError } = await sbClient
+            .from('usu_cadastro')
+            .select('EMAIL_USU')
+            .eq('EMAIL_USU', email)
+            .maybeSingle();
+
+        if (searchError) {
+            console.error("Erro ao buscar email:", searchError);
+            showCustomModal("Erro ao verificar e-mail. Tente novamente.", "Erro");
+            return;
+        }
+
+        if (!userExists) {
+            showCustomModal("Este e-mail não está cadastrado em nosso sistema.", "E-mail não encontrado");
+            return; // Bloqueia o envio
+        }
+
+        // 2. Se existe, prossegue com o envio
+        let redirectUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/')) + '/recuperar_senha.html';
+
+        const { error } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
+
+        if (error) {
+            showCustomModal("Erro ao enviar: " + error.message, "Erro");
+        } else {
+            showCustomModal("Link de recuperação enviado! Verifique seu e-mail (inclusive spam).", "Sucesso");
+        }
     }
 }
 
@@ -201,11 +193,6 @@ function injectLoginModalHTML() {
         btn.disabled = true;
 
         const sbClient = window.supabase;
-        if (!sbClient) {
-            alert('Erro de sistema: Cliente não carregado.');
-            return;
-        }
-
         const { error } = await sbClient.auth.signInWithPassword({ email, password });
 
         if (error) {
@@ -216,24 +203,6 @@ function injectLoginModalHTML() {
             window.location.reload();
         }
     });
-}
-
-// --- RECUPERAÇÃO DE SENHA ---
-async function handleForgotPassword() {
-    const email = await showCustomModal("Digite seu e-mail para receber o link de recuperação:", "Recuperar Senha", true);
-
-    if (email) {
-        let redirectUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/')) + '/recuperar_senha.html';
-
-        const sbClient = window.supabase;
-        const { error } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
-
-        if (error) {
-            showCustomModal("Erro ao enviar: " + error.message, "Erro");
-        } else {
-            showCustomModal("Link de recuperação enviado! Verifique seu e-mail (inclusive spam).", "Sucesso");
-        }
-    }
 }
 
 // --- MODAL CUSTOMIZADO ---
@@ -312,3 +281,43 @@ window.showCustomModal = function(message, title = 'Aviso', hasInput = false) {
         modal.onclick = (e) => { if (e.target === modal) close(); };
     });
 };
+
+function updateFooter() {
+    const footerContainer = document.querySelector('footer .container');
+    if (footerContainer) {
+        footerContainer.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; flex-wrap: wrap; gap: 20px;">
+                <div class="footer-col" style="flex: 1; min-width: 200px; text-align: left;">
+                    <h4 style="color: #f0c029; margin-bottom: 15px; text-transform: uppercase; font-size: 0.9em; border-bottom: 1px solid #444; display: inline-block; padding-bottom: 5px;">SR Service</h4>
+                    <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;">CNPJ: 00.000.000/0001-00</p>
+                    <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;">Brasílio Custódio de Camargo, 109</p>
+                    <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;">CEP: 18890-762</p>
+                    <p style="margin: 15px 0 0 0; color: #777; font-size: 0.8em;">&copy; 2025 Todos os direitos reservados.</p>
+                </div>
+
+                <div class="footer-col" style="flex: 1; min-width: 200px; text-align: center;">
+                    <h4 style="color: #f0c029; margin-bottom: 15px; text-transform: uppercase; font-size: 0.9em;">Mapa do Site</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0; line-height: 2;">
+                        <li><a href="index.html" style="color: #ccc; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#f0c029'" onmouseout="this.style.color='#ccc'">Início</a></li>
+                        <li><a href="servicos.html" style="color: #ccc; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#f0c029'" onmouseout="this.style.color='#ccc'">Serviços</a></li>
+                        <li><a href="sobre_nos.html" style="color: #ccc; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#f0c029'" onmouseout="this.style.color='#ccc'">Sobre Nós</a></li>
+                        <li><a href="orcamento.html" style="color: #ccc; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#f0c029'" onmouseout="this.style.color='#ccc'">Solicitar Orçamento</a></li>
+                         <li><a href="politica_privacidade.html" style="color: #ccc; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#f0c029'" onmouseout="this.style.color='#ccc'">Política de Privacidade</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-col" style="flex: 1; min-width: 200px; text-align: right;">
+                    <h4 style="color: #f0c029; margin-bottom: 15px; text-transform: uppercase; font-size: 0.9em; border-bottom: 1px solid #444; display: inline-block; padding-bottom: 5px;">Contato</h4>
+                    <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;"><i class="fas fa-phone" style="margin-right:8px; color:#f0c029;"></i> (14) 99700-0206</p>
+                    <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;"><i class="fas fa-envelope" style="margin-right:8px; color:#f0c029;"></i> adrekzo44@gmail.com</p>
+                    
+                    <div class="footer-social" style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 15px;">
+                        <a href="https://wa.me/5514997000206" target="_blank" style="color: #f0c029; font-size: 1.5em; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#f0c029'"><i class="fab fa-whatsapp"></i></a>
+                        <a href="https://www.instagram.com/styvezatto/" target="_blank" style="color: #f0c029; font-size: 1.5em; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#f0c029'"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.linkedin.com/in/adrian-ezequiel-5720503a0/" target="_blank" style="color: #f0c029; font-size: 1.5em; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#f0c029'"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
