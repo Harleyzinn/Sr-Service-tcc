@@ -39,68 +39,43 @@
 
     <main class="main-wrapper">
         <div class="content-card wide-card">
-
-            <!-- Título Principal -->
             <div class="card-header">
-                <h1><i class="fas fa-file-invoice-dollar"></i> Meus Pedidos em Andamento</h1>
-                <p>Acompanhe o status das suas solicitações ativas.</p>
+                <h1>Meus Orçamentos</h1>
+                <p>Acompanhe o status das suas solicitações</p>
+            </div>
 
-                <!-- Área de Filtro -->
-                <div class="filter-wrapper">
-                    <label for="filtroStatus"><i class="fas fa-filter"></i> Filtrar por Status:</label>
-                    <select id="filtroStatus">
-                        <option value="Todos">Todos os Ativos</option>
+            <!-- Filtros e Ações -->
+            <div class="secondary-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div class="action-left">
+                    <a href="orcamento.html" class="btn-novo-orcamento">
+                        <i class="fas fa-plus"></i> Novo Pedido
+                    </a>
+                </div>
+                <div class="filter-right" style="display: flex; align-items: center; gap: 10px;">
+                    <label for="filtroStatus" style="font-weight: bold; color: #555;">Filtrar por:</label>
+                    <select id="filtroStatus" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <option value="Todos">Todos</option>
+                        <option value="Não Visualizado">Não Visualizado</option>
                         <option value="Pendente">Pendente</option>
-                        <option value="Em Análise">Em Análise</option>
-                        <option value="Aprovado">Aprovado</option>
+                        <option value="Concluido">Concluído</option>
                     </select>
                 </div>
             </div>
 
-            <!-- Tabela de Pedidos ATIVOS -->
-            <div class="table-responsive">
-                <table class="custom-table" id="tabela-ativos">
+            <!-- Tabela de Orçamentos Ativos -->
+            <div id="tabela-ativos">
+                <h3 class="section-title"><i class="fas fa-tasks"></i> Histórico de Pedidos</h3>
+                <table class="data-table">
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Data/Hora</th>
+                            <th>Data</th>
                             <th>Serviço</th>
-                            <th style="width: 30%;">Descrição</th>
+                            <th>Detalhes</th>
                             <th>Status</th>
                         </tr>
                     </thead>
                     <tbody id="lista-orcamentos-ativos">
-                        <tr>
-                            <td colspan="5" class="loading-text">
-                                <i class="fas fa-spinner fa-spin"></i> Carregando...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Divisória visual -->
-            <hr class="section-divider">
-
-            <!-- Título Secundário -->
-            <div class="card-header secondary-header">
-                <h2><i class="fas fa-history"></i> Histórico de Concluídos</h2>
-                <p>Pedidos finalizados, recusados ou cancelados.</p>
-            </div>
-
-            <!-- Tabela de Pedidos CONCLUÍDOS -->
-            <div class="table-responsive">
-                <table class="custom-table" id="tabela-concluidos">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Data/Hora</th>
-                            <th>Serviço</th>
-                            <th style="width: 30%;">Descrição</th>
-                            <th>Status Final</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lista-orcamentos-concluidos">
                         <tr>
                             <td colspan="5" class="loading-text">Carregando histórico...</td>
                         </tr>
@@ -125,13 +100,7 @@
 
     <footer>
         <div class="container">
-            <div class="footer-contact">
-                <p>©SR Service Cranes and Components</p>
-                <p>tel: (xx)997000206</p>
-                <p>email: adrekzo44@gmail.com</p>
-                <p>CEP: 18890-762</p>
-            </div>
-            <div class="footer-social"><a href="#"><i class="fab fa-whatsapp"></i></a><a href="#"><i class="fab fa-instagram"></i></a><a href="#"><i class="fab fa-linkedin-in"></i></a></div>
+            <!-- Rodapé injetado pelo script.js -->
         </div>
     </footer>
 

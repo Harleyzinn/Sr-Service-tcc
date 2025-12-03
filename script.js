@@ -1,18 +1,20 @@
 document.addEventListener('DOMContentLoaded', async() => {
-    // 1. Injeta os modais
-    injectCustomModalHTML(); // Z-Index: 11000 (Fica na frente de tudo)
-    injectLoginModalHTML(); // Z-Index: 10000
-
-    // 2. Configura o Cabeçalho
+    injectCustomModalHTML();
+    injectLoginModalHTML();
     await setupHeader();
-
-    // 3. Atualiza o Rodapé
     updateFooter();
 
-    // 4. Verifica recuperação de senha
-    if (window.location.hash && window.location.hash.includes('type=recovery')) {
-        if (!window.location.pathname.includes('recuperar_senha.html')) {
-            window.location.href = 'recuperar_senha.html' + window.location.hash;
+    const hash = window.location.hash;
+    if (hash) {
+        if (hash.includes('type=recovery')) {
+            if (!window.location.pathname.includes('recuperar_senha.html')) {
+                window.location.href = 'recuperar_senha.html' + hash;
+            }
+        } else if (hash.includes('error=access_denied') && hash.includes('otp_expired')) {
+            history.replaceState(null, null, window.location.pathname);
+            setTimeout(() => {
+                showCustomModal('Este link de confirmação já foi utilizado ou expirou. Tente fazer login normalmente.', 'Link Expirado');
+            }, 1000);
         }
     }
 });
@@ -23,11 +25,7 @@ async function setupHeader() {
     if (!loginArea) return;
 
     const sbClient = window.supabase;
-
-    if (!sbClient || !sbClient.auth) {
-        console.warn("Supabase ainda não carregou no header.");
-        return;
-    }
+    if (!sbClient || !sbClient.auth) return;
 
     const { data: { user } } = await sbClient.auth.getUser();
 
@@ -47,39 +45,33 @@ async function setupHeader() {
                 if (perfil.NOME_USU) primeiroNome = perfil.NOME_USU.split(' ')[0];
                 if (perfil.admin === 1) isAdmin = true;
             }
-        } catch (error) {
-            console.log('Perfil ainda não criado ou erro ao buscar dados.');
-        }
+        } catch (error) { console.log('Erro perfil'); }
 
         let buttonsHTML = '';
 
-        // 1. Botão Painel Admin (se for admin)
+        // LÓGICA DE EXIBIÇÃO DE BOTÕES
         if (isAdmin) {
+            // SE FOR ADMIN: Mostra APENAS o Painel
             buttonsHTML += `
-                <a href="admin.html" style="background-color: #333; color: #f0c029; border: 1px solid #f0c029; padding: 6px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.9em; margin-right: 10px; transition: 0.3s; display: inline-flex; align-items: center; gap: 6px;" onmouseover="this.style.backgroundColor='#f0c029'; this.style.color='#000';" onmouseout="this.style.backgroundColor='#333'; this.style.color='#f0c029';">
-                    <i class="fas fa-user-shield"></i> Painel
+                <a href="admin.html" style="background-color: #333; color: #f0c029; border: 1px solid #f0c029; padding: 6px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.9em; margin-right: 15px; transition: 0.3s; display: inline-flex; align-items: center; gap: 6px;" onmouseover="this.style.backgroundColor='#f0c029'; this.style.color='#000';" onmouseout="this.style.backgroundColor='#333'; this.style.color='#f0c029';">
+                    <i class="fas fa-user-shield"></i> Painel de Admin
+                </a>
+            `;
+        } else {
+            // SE FOR CLIENTE: Mostra "Meus Orçamentos" (Estilizado igual ao Admin)
+            buttonsHTML += `
+                <a href="consultar_orcamento.html" style="background-color: #333; color: #f0c029; border: 1px solid #f0c029; padding: 6px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.9em; margin-right: 15px; transition: 0.3s; display: inline-flex; align-items: center; gap: 6px;" onmouseover="this.style.backgroundColor='#f0c029'; this.style.color='#000';" onmouseout="this.style.backgroundColor='#333'; this.style.color='#f0c029';">
+                    <i class="fas fa-list-ul"></i> Meus Orçamentos
                 </a>
             `;
         }
 
-        // 2. Botão MEUS ORÇAMENTOS (Adicionado Aqui)
-        // Redireciona para consultar_orcamento.html
-        buttonsHTML += `
-            <a href="consultar_orcamento.html" style="color: #ccc; text-decoration: none; margin-right: 15px; font-weight: 500; font-size: 0.95em; transition: color 0.3s;" onmouseover="this.style.color='#f0c029'" onmouseout="this.style.color='#ccc'">
-                <i class="fas fa-list-ul"></i> Meus Orçamentos
-            </a>
-        `;
-
-        // 3. Botão Perfil
+        // Botão Perfil (Comum a todos)
         buttonsHTML += `
             <a href="perfil.html" class="btn-user-logged" style="color: #f0c029; text-decoration: none; margin-right: 15px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;">
                 <i class="fas fa-user-circle"></i> ${primeiroNome}
             </a>
-        `;
-
-        // 4. Botão Sair
-        buttonsHTML += `
-            <button id="btn-logout" style="background: transparent; border: 1px solid #666; color: #ccc; padding: 5px 10px; border-radius: 4px; cursor: pointer; transition: 0.3s;" onmouseover="this.style.borderColor='#999'; this.style.color='#fff';" onmouseout="this.style.borderColor='#666'; this.style.color='#ccc';">
+            <button id="btn-logout" style="background: transparent; border: 1px solid #666; color: #ccc; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
                 Sair <i class="fas fa-sign-out-alt"></i>
             </button>
         `;
@@ -94,22 +86,21 @@ async function setupHeader() {
     } else {
         // --- USUÁRIO DESLOGADO ---
         loginArea.innerHTML = `
-            <a href="#" id="btn-open-login" style="color: #fff; text-decoration: none; margin-right: 15px; font-weight: 500; transition: color 0.3s;" onmouseover="this.style.color='#f0c029'" onmouseout="this.style.color='#fff'">Entrar</a>
-            <a href="cadastro.html" class="btn-cta" style="background-color: #f0c029; color: #1a1a1a; padding: 8px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; transition: background 0.3s; display: inline-block;">Criar Conta</a>
+            <a href="#" id="btn-open-login" style="color: #fff; text-decoration: none; margin-right: 15px; font-weight: 500;">Entrar</a>
+            <a href="cadastro.html" class="btn-cta" style="background-color: #f0c029; color: #1a1a1a; padding: 8px 15px; border-radius: 4px; text-decoration: none; font-weight: bold;">Criar Conta</a>
         `;
 
         const btnOpenLogin = document.getElementById('btn-open-login');
         if (btnOpenLogin) {
             btnOpenLogin.addEventListener('click', (e) => {
                 e.preventDefault();
-                const modal = document.getElementById('login-modal');
-                if (modal) modal.style.display = 'flex';
+                document.getElementById('login-modal').style.display = 'flex';
             });
         }
     }
 }
 
-// --- RODAPÉ COM LINKS ---
+// --- RODAPÉ ---
 function updateFooter() {
     const footerContainer = document.querySelector('footer .container');
     if (footerContainer) {
@@ -126,11 +117,11 @@ function updateFooter() {
                 <div class="footer-col" style="flex: 1; min-width: 200px; text-align: center;">
                     <h4 style="color: #f0c029; margin-bottom: 15px; text-transform: uppercase; font-size: 0.9em;">Mapa do Site</h4>
                     <ul style="list-style: none; padding: 0; margin: 0; line-height: 2;">
-                        <li><a href="index.html" style="color: #ccc; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#f0c029'" onmouseout="this.style.color='#ccc'">Início</a></li>
-                        <li><a href="servicos.html" style="color: #ccc; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#f0c029'" onmouseout="this.style.color='#ccc'">Serviços</a></li>
-                        <li><a href="sobre_nos.html" style="color: #ccc; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#f0c029'" onmouseout="this.style.color='#ccc'">Sobre Nós</a></li>
-                        <li><a href="orcamento.html" style="color: #ccc; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#f0c029'" onmouseout="this.style.color='#ccc'">Solicitar Orçamento</a></li>
-                         <li><a href="politica_privacidade.html" style="color: #ccc; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#f0c029'" onmouseout="this.style.color='#ccc'">Política de Privacidade</a></li>
+                        <li><a href="index.html" style="color: #ccc; text-decoration: none;">Início</a></li>
+                        <li><a href="servicos.html" style="color: #ccc; text-decoration: none;">Serviços</a></li>
+                        <li><a href="sobre_nos.html" style="color: #ccc; text-decoration: none;">Sobre Nós</a></li>
+                        <li><a href="orcamento.html" style="color: #ccc; text-decoration: none;">Solicitar Orçamento</a></li>
+                         <li><a href="politica_privacidade.html" style="color: #ccc; text-decoration: none;">Política de Privacidade</a></li>
                     </ul>
                 </div>
                 
@@ -140,9 +131,9 @@ function updateFooter() {
                     <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;"><i class="fas fa-envelope" style="margin-right:8px; color:#f0c029;"></i> adrekzo44@gmail.com</p>
                     
                     <div class="footer-social" style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 15px;">
-                        <a href="https://wa.me/5514997000206" target="_blank" style="color: #f0c029; font-size: 1.5em; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#f0c029'"><i class="fab fa-whatsapp"></i></a>
-                        <a href="https://www.instagram.com/styvezatto/" target="_blank" style="color: #f0c029; font-size: 1.5em; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#f0c029'"><i class="fab fa-instagram"></i></a>
-                        <a href="https://www.linkedin.com/in/adrian-ezequiel-5720503a0/" target="_blank" style="color: #f0c029; font-size: 1.5em; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#f0c029'"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="https://wa.me/5514997000206" target="_blank" style="color: #f0c029; font-size: 1.5em;"><i class="fab fa-whatsapp"></i></a>
+                        <a href="https://www.instagram.com/styvezatto/" target="_blank" style="color: #f0c029; font-size: 1.5em;"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.linkedin.com/in/adrian-ezequiel-5720503a0/" target="_blank" style="color: #f0c029; font-size: 1.5em;"><i class="fab fa-linkedin-in"></i></a>
                     </div>
                 </div>
             </div>
@@ -150,7 +141,7 @@ function updateFooter() {
     }
 }
 
-// --- MODAL DE LOGIN (Z-INDEX: 10000) ---
+// --- MODAL DE LOGIN ---
 function injectLoginModalHTML() {
     if (document.getElementById('login-modal')) return;
 
@@ -232,7 +223,7 @@ async function handleForgotPassword() {
     const email = await showCustomModal("Digite seu e-mail para receber o link de recuperação:", "Recuperar Senha", true);
 
     if (email) {
-        let redirectUrl = 'https://harleyzinn.github.io/Sr-Service-tcc/recuperar_senha.html';
+        let redirectUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/')) + '/recuperar_senha.html';
 
         const sbClient = window.supabase;
         const { error } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
@@ -245,7 +236,7 @@ async function handleForgotPassword() {
     }
 }
 
-// --- MODAL CUSTOMIZADO (Z-INDEX: 11000) ---
+// --- MODAL CUSTOMIZADO ---
 function injectCustomModalHTML() {
     if (!document.getElementById('custom-modal')) {
         const modalHTML = `

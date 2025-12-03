@@ -2,12 +2,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const sbClient = window.supabase;
 
     if (!sbClient || !sbClient.auth) {
-        console.error('Erro CRÍTICO: Cliente Supabase não encontrado ou mal inicializado.');
-        if (typeof showCustomModal === 'function') showCustomModal('Erro de sistema: Conexão com banco de dados falhou.', 'Erro Fatal');
+        console.error('Erro CRÍTICO: Cliente Supabase não encontrado.');
+        if (typeof showCustomModal === 'function') showCustomModal('Erro de sistema: Conexão falhou.', 'Erro Fatal');
         return;
     }
 
-    // --- MÁSCARAS DE INPUT ---
+    // --- MÁSCARAS (Mantidas) ---
     const cpfInput = document.getElementById('cpf');
     const telInput = document.getElementById('tel');
 
@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
         cpfInput.addEventListener('input', (e) => {
             let value = e.target.value.replace(/\D/g, "");
             if (value.length > 14) value = value.slice(0, 14);
-
             if (value.length <= 11) {
                 value = value.replace(/(\d{3})(\d)/, "$1.$2");
                 value = value.replace(/(\d{3})(\d)/, "$1.$2");
@@ -34,7 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
         telInput.addEventListener('input', (e) => {
             let value = e.target.value.replace(/\D/g, "");
             if (value.length > 11) value = value.slice(0, 11);
-
             if (value.length > 10) {
                 value = value.replace(/^(\d{2})(\d)/, "($1) $2");
                 value = value.replace(/(\d{5})(\d)/, "$1-$2");
@@ -67,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!emailRegex.test(email)) return showCustomModal('E-mail inválido.', 'Erro');
 
             const telLimpo = telRaw.replace(/\D/g, '');
-            if (telLimpo.length < 10 || telLimpo.length > 11) return showCustomModal('Telefone inválido (DDD + número).', 'Erro');
+            if (telLimpo.length < 10 || telLimpo.length > 11) return showCustomModal('Telefone inválido.', 'Erro');
 
             const docLimpo = cpfRaw.replace(/\D/g, '');
             if (docLimpo.length === 11) {
@@ -84,13 +82,21 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.innerText = 'Cadastrando...';
 
             try {
-                // 1. Cria usuário no Auth COM REDIRECT CORRETO
+                // LÓGICA DE URL DINÂMICA
+                // Pega a URL atual (seja localhost ou github) e remove o nome do arquivo atual
+                // Ex: http://127.0.0.1:5500/cadastro.html vira http://127.0.0.1:5500/
+                let baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
+
+                // Se a URL não terminar com /, adiciona (para garantir)
+                if (!baseUrl.endsWith('/')) baseUrl += '/';
+
+                // 1. Cria usuário no Auth
                 const { data: authData, error: authError } = await sbClient.auth.signUp({
                     email: email,
                     password: senha,
                     options: {
-                        // Força o redirecionamento para a URL correta do repositório
-                        emailRedirectTo: 'https://harleyzinn.github.io/Sr-Service-tcc/'
+                        // Redireciona para a home do mesmo lugar onde o usuário está agora
+                        emailRedirectTo: baseUrl + 'index.html'
                     }
                 });
 
@@ -112,12 +118,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         admin: 0
                     });
 
-                    if (insertError) {
-                        console.error('Erro ao salvar dados complementares:', insertError);
-                    }
+                    if (insertError) console.error('Erro ao salvar dados:', insertError);
 
-                    await showCustomModal('Cadastro realizado com sucesso! Verifique seu e-mail para continuar.', 'Sucesso');
-
+                    await showCustomModal('Cadastro realizado! Verifique seu e-mail para confirmar.', 'Sucesso');
                     window.location.href = 'index.html';
                 }
 
@@ -134,6 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// Funções de Validação (Mantidas)
 function validarCPF(cpf) {
     if (/^(\d)\1+$/.test(cpf)) return false;
     let soma = 0,
