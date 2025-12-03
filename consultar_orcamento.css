@@ -121,7 +121,7 @@ body {
 }
 
 
-/* Tabelas */
+/* --- TABELAS (ESTILIZAÇÃO PADRONIZADA) --- */
 
 .table-responsive {
     overflow-x: auto;
@@ -134,29 +134,58 @@ body {
     min-width: 700px;
 }
 
+
+/* Regra Geral para Células (Header e Body) */
+
+.data-table th,
+.data-table td {
+    padding: 15px;
+    /* Espaçamento igual para alinhar */
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+
+/* Estilo Específico do Header */
+
 .data-table th {
     background-color: #1a1a1a;
     color: #f0c029;
-    padding: 15px;
-    text-align: left;
+    border-bottom: none;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.9em;
 }
 
-.data-table td {
-    padding: 15px;
-    border-bottom: 1px solid #eee;
-    color: #333;
+
+/* Classes Utilitárias de Alinhamento (usadas no HTML e JS) */
+
+.text-center {
+    text-align: center !important;
+}
+
+.text-right {
+    text-align: right !important;
+}
+
+.data-table tbody tr:hover {
+    background-color: #f9f9f9;
 }
 
 
 /* Cores dos Status */
 
 .status-badge {
-    padding: 5px 10px;
-    border-radius: 15px;
+    padding: 6px 12px;
+    border-radius: 20px;
     color: #fff;
     font-size: 0.85em;
     font-weight: bold;
     display: inline-block;
+    text-align: center;
+    min-width: 100px;
+    /* Garante largura mínima para ficar bonito */
 }
 
 .status-pendente {
@@ -185,11 +214,20 @@ body {
 /* Botão Ler */
 
 .btn-ver-desc {
-    transition: transform 0.2s, background-color 0.3s !important;
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid #f0c029;
+    color: #1a1a1a;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: transform 0.2s, background-color 0.3s;
 }
 
 .btn-ver-desc:hover {
-    background-color: #d4a910 !important;
+    background-color: #f0c029;
+    color: #fff;
     transform: scale(1.05);
 }
 

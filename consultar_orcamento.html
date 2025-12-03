@@ -13,10 +13,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
 
-    <!-- CSS INLINE PARA CORRIGIR QUEBRA DE LINHA NO MODAL -->
+    <!-- CSS INLINE APENAS PARA O MODAL (TEXTO) -->
     <style>
-        /* Isso garante que o texto dentro do modal respeite os parágrafos */
-        
         #modal-message {
             white-space: pre-wrap;
             word-wrap: break-word;
@@ -82,8 +80,9 @@
                                 <th>ID</th>
                                 <th>Data/Hora</th>
                                 <th>Serviço</th>
-                                <th style="text-align:center;">Detalhes</th>
-                                <th style="text-align:center;">Status</th>
+                                <th class="text-center">Detalhes</th>
+                                <th class="text-center">Status</th>
+                                <!-- Centralizado -->
                             </tr>
                         </thead>
                         <tbody id="lista-orcamentos-ativos">
@@ -104,8 +103,9 @@
                                 <th style="color: #ccc;">ID</th>
                                 <th style="color: #ccc;">Data/Hora</th>
                                 <th style="color: #ccc;">Serviço</th>
-                                <th style="text-align:center; color:#ccc;">Detalhes</th>
-                                <th style="color: #ccc;">Status</th>
+                                <th class="text-center" style="color: #ccc;">Detalhes</th>
+                                <th class="text-center" style="color: #ccc;">Status</th>
+                                <!-- Centralizado -->
                             </tr>
                         </thead>
                         <tbody id="lista-orcamentos-concluidos">

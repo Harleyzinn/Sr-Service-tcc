@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', async() => {
-    // 1. Verifica login
     const sbClient = window.supabase;
     if (!sbClient) { console.error('Erro: Supabase não encontrado.'); return; }
 
@@ -21,13 +20,14 @@ document.addEventListener('DOMContentLoaded', async() => {
 
     const containerAtivos = document.getElementById('container-ativos');
     const containerConcluidos = document.getElementById('container-concluidos');
+    const tableAtivos = document.getElementById('tabela-ativos');
+    const tableConcluidos = document.getElementById('tabela-concluidos');
 
     const filterSelect = document.getElementById('filtroStatus');
 
     let todosOrcamentos = [];
 
     try {
-        // 2. Busca ID do usuário
         const { data: perfil, error: perfilError } = await sbClient
             .from('usu_cadastro')
             .select('COD_USUARIO')
@@ -39,7 +39,6 @@ document.addEventListener('DOMContentLoaded', async() => {
             return;
         }
 
-        // 3. Busca orçamentos
         const { data: orcamentos, error: orcError } = await sbClient
             .from('tb_orcamento')
             .select('*')
@@ -53,49 +52,44 @@ document.addEventListener('DOMContentLoaded', async() => {
 
     } catch (error) {
         console.error(error);
-        if (tbodyAtivos) tbodyAtivos.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Erro ao carregar.</td></tr>';
+        if (tbodyAtivos) tbodyAtivos.innerHTML = '<tr><td colspan="5" class="text-center" style="color:red;">Erro ao carregar.</td></tr>';
     }
 
-    // --- FUNÇÃO PRINCIPAL ---
     function distribuirOrcamentos(listaCompleta) {
-        // Limpa tabelas
         tbodyAtivos.innerHTML = '';
         tbodyConcluidos.innerHTML = '';
 
-        // Status considerados "Ativos"
         const statusAtivos = ['Não Visualizado', 'Pendente', 'Em Análise', 'Aprovado'];
 
-        // Separa os dados
         const listaAtivos = listaCompleta.filter(o => statusAtivos.includes(o.STATUS_ORCAMENTO));
-        const listaConcluidos = listaCompleta.filter(o => !statusAtivos.includes(o.STATUS_ORCAMENTO)); // Concluido, Recusado, Cancelado
+        const listaConcluidos = listaCompleta.filter(o => !statusAtivos.includes(o.STATUS_ORCAMENTO));
 
-        // Renderiza cada parte
         renderRows(tbodyAtivos, listaAtivos);
         renderRows(tbodyConcluidos, listaConcluidos);
 
-        // Controla visibilidade das mensagens de "Vazio"
+        // Lógica de Exibição
         const temAtivos = listaAtivos.length > 0;
         const temConcluidos = listaConcluidos.length > 0;
 
-        // Tabela Ativos
+        // Ativos
         if (temAtivos) {
-            tbodyAtivos.parentElement.parentElement.style.display = 'block'; // Mostra div .table-responsive
+            tableAtivos.style.display = 'table';
             msgSemAtivos.style.display = 'none';
         } else {
-            tbodyAtivos.parentElement.parentElement.style.display = 'none';
+            tableAtivos.style.display = 'none';
             msgSemAtivos.style.display = 'block';
         }
 
-        // Tabela Concluidos
+        // Concluidos
         if (temConcluidos) {
-            tbodyConcluidos.parentElement.parentElement.style.display = 'block';
+            tableConcluidos.style.display = 'table';
             msgSemConcluidos.style.display = 'none';
         } else {
-            tbodyConcluidos.parentElement.parentElement.style.display = 'none';
+            tableConcluidos.style.display = 'none';
             msgSemConcluidos.style.display = 'block';
         }
 
-        // Se não tem nada em lugar nenhum
+        // Geral
         if (!temAtivos && !temConcluidos) {
             containerAtivos.style.display = 'none';
             containerConcluidos.style.display = 'none';
@@ -107,16 +101,15 @@ document.addEventListener('DOMContentLoaded', async() => {
         }
     }
 
-    // --- RENDERIZA LINHAS ---
     function renderRows(tbody, lista) {
         lista.forEach(orc => {
             const tr = document.createElement('tr');
 
+            // --- DATA E HORA ---
             const dataObj = new Date(orc.created_at || orc.DATA_SOLICITACAO);
             const dataFormatada = dataObj.toLocaleDateString('pt-BR');
             const horaFormatada = dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-            // Define classe de cor baseada no status
             const statusRaw = orc.STATUS_ORCAMENTO || 'Não Visualizado';
             let statusClass = 'status-nao-visualizado';
 
@@ -127,22 +120,21 @@ document.addEventListener('DOMContentLoaded', async() => {
 
             const descCompleta = orc.DESCRICAO;
 
+            // OBSERVE: Sem style inline para padding/border, apenas classes para alinhamento
             tr.innerHTML = `
-                <td style="padding: 15px; border-bottom: 1px solid #eee;"><strong>#${orc.COD_ORCAMENTO}</strong></td>
-                <td style="padding: 15px; border-bottom: 1px solid #eee;">
+                <td><strong>#${orc.COD_ORCAMENTO}</strong></td>
+                <td>
                     <div>${dataFormatada}</div>
                     <div style="font-size: 0.85em; color: #888; margin-top: 2px;"><i class="far fa-clock"></i> ${horaFormatada}</div>
                 </td>
-                <td style="padding: 15px; border-bottom: 1px solid #eee;">${orc.TIPO_SERVICO}</td>
-                <td style="padding: 15px; border-bottom: 1px solid #eee; text-align:center;">
-                    <button class="btn-ver-desc" style="padding: 6px 12px; background:transparent; border:1px solid #f0c029; color:#1a1a1a; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.9em;">
+                <td>${orc.TIPO_SERVICO}</td>
+                <td class="text-center">
+                    <button class="btn-ver-desc">
                         <i class="far fa-eye"></i> Ler
                     </button>
                 </td>
-                <td style="padding: 15px; border-bottom: 1px solid #eee; text-align:center;">
-                    <span class="status-badge ${statusClass}" style="padding: 5px 10px; border-radius: 15px; color: #fff; font-size: 0.85em; font-weight: bold;">
-                        ${statusRaw}
-                    </span>
+                <td class="text-center">
+                    <span class="status-badge ${statusClass}">${statusRaw}</span>
                 </td>
             `;
 
@@ -158,7 +150,6 @@ document.addEventListener('DOMContentLoaded', async() => {
         });
     }
 
-    // --- LÓGICA DE FILTRO ---
     filterSelect.addEventListener('change', (e) => {
         const filtro = e.target.value;
         if (filtro === 'Todos') {
