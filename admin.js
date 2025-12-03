@@ -40,12 +40,12 @@ document.addEventListener('DOMContentLoaded', async() => {
     const tbody = document.getElementById('orcamentos-tbody');
     const filterSelect = document.getElementById('filterStatus');
 
-    // --- FUNÇÃO PARA BUSCAR DADOS (CORRIGIDA) ---
+    // --- FUNÇÃO PARA BUSCAR DADOS ---
     async function fetchOrcamentos() {
         try {
             tbody.innerHTML = '<tr><td colspan="7" class="loading-text" style="text-align:center; padding:20px;">Carregando pedidos...</td></tr>';
 
-            // 1. Busca os orçamentos PRIMEIRO
+            // 1. Busca os orçamentos
             const { data: orcamentos, error: orcError } = await sbClient
                 .from('tb_orcamento')
                 .select('*')
@@ -53,8 +53,8 @@ document.addEventListener('DOMContentLoaded', async() => {
 
             if (orcError) throw orcError;
 
-            // 2. Busca os dados dos usuários manualmente para evitar erro de Foreign Key
-            // Cria um array de Promises para buscar os dados de cada usuário
+            // 2. Busca dados complementares dos usuários (Manual Join)
+            // Isso evita erros se a Foreign Key não estiver configurada no banco
             const orcamentosCompletos = await Promise.all(orcamentos.map(async(orc) => {
                 let dadosUsuario = { END_USU: 'Não encontrado', TEL_USU: '' };
 
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', async() => {
                     }
                 }
 
-                // Retorna o orçamento com os dados do usuário mesclados
+                // Anexa os dados do usuário ao objeto do orçamento
                 return {...orc, usu_cadastro: dadosUsuario };
             }));
 
@@ -101,31 +101,29 @@ document.addEventListener('DOMContentLoaded', async() => {
             const dataStr = dateObj.toLocaleDateString('pt-BR');
             const horaStr = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-            // Dados do Cliente (com fallback)
+            // Dados do Cliente
             const clienteNome = orc.NOME_CONTATO || 'Desconhecido';
             const clienteEmpresa = orc.NOME_EMPRESA ? `(${orc.NOME_EMPRESA})` : '';
             const clienteEmail = orc.EMAIL_CONTATO || 'Sem e-mail';
 
-            // Dados vindos da busca manual (usu_cadastro)
+            // CORREÇÃO AQUI: Sintaxe ?. (junto)
             const clienteEndereco = orc.usu_cadastro ? .END_USU || 'Endereço não disponível';
             const clienteTelBanco = orc.usu_cadastro ? .TEL_USU;
-            const clienteTelOrcamento = orc.TELEFONE_CONTATO; // Telefone salvo no pedido
 
-            // Prioriza telefone do pedido, senão usa do cadastro
+            const clienteTelOrcamento = orc.TELEFONE_CONTATO;
+
+            // Prioriza telefone do pedido
             let telefoneFinal = clienteTelOrcamento || clienteTelBanco || '';
             if (telefoneFinal) telefoneFinal = formatarTelefone(telefoneFinal.toString());
             else telefoneFinal = 'Sem telefone';
 
-            // Descrição e Status
             const descCompleta = orc.DESCRICAO || 'Sem descrição.';
-            const descResumo = descCompleta.length > 50 ? descCompleta.substring(0, 50) + '...' : descCompleta;
             const statusAtual = orc.STATUS_ORCAMENTO || 'Não Visualizado';
 
-            // Links clicáveis
+            // Links
             const emailLink = `<a href="mailto:${clienteEmail}" title="Enviar e-mail" style="color: #f0c029; text-decoration: none;">${clienteEmail}</a>`;
             const whatsLink = telefoneFinal !== 'Sem telefone' ? `<a href="https://wa.me/55${telefoneFinal.replace(/\D/g,'')}" target="_blank" style="color: #2ecc71; text-decoration: none; margin-left: 5px;" title="Chamar no WhatsApp"><i class="fab fa-whatsapp"></i></a>` : '';
 
-            // Monta HTML da linha
             tr.innerHTML = `
                 <td><strong>#${orc.COD_ORCAMENTO}</strong></td>
                 <td>
@@ -150,15 +148,11 @@ document.addEventListener('DOMContentLoaded', async() => {
                     <select class="status-select" data-id="${orc.COD_ORCAMENTO}" style="padding: 5px; border-radius: 4px; background: #333; color: #fff; border: 1px solid #555;">
                         <option value="Não Visualizado" ${statusAtual === 'Não Visualizado' ? 'selected' : ''}>Não Visualizado</option>
                         <option value="Pendente" ${statusAtual === 'Pendente' ? 'selected' : ''}>Pendente</option>
-                        <option value="Em Análise" ${statusAtual === 'Em Análise' ? 'selected' : ''}>Em Análise</option>
-                        <option value="Aprovado" ${statusAtual === 'Aprovado' ? 'selected' : ''}>Aprovado</option>
                         <option value="Concluido" ${statusAtual === 'Concluido' ? 'selected' : ''}>Concluído</option>
-                        <option value="Recusado" ${statusAtual === 'Recusado' ? 'selected' : ''}>Recusado</option>
                     </select>
                 </td>
             `;
 
-            // Evento: Ver Descrição
             tr.querySelector('.btn-ver-desc').addEventListener('click', () => {
                 if (typeof showCustomModal === 'function') {
                     showCustomModal(descCompleta, `Detalhes do Pedido #${orc.COD_ORCAMENTO}`);
@@ -170,14 +164,13 @@ document.addEventListener('DOMContentLoaded', async() => {
             tbody.appendChild(tr);
         });
 
-        // Evento: Alterar Status
+        // Eventos de mudança de status
         document.querySelectorAll('.status-select').forEach(sel => {
             sel.addEventListener('change', async(e) => {
                 const id = e.target.dataset.id;
                 const novoStatus = e.target.value;
-                const originalValue = e.target.getAttribute('data-original'); // Para reverter em caso de erro
+                const originalValue = e.target.getAttribute('data-original');
 
-                // Feedback visual (desabilita enquanto salva)
                 e.target.disabled = true;
                 e.target.style.opacity = '0.5';
 
@@ -189,32 +182,27 @@ document.addEventListener('DOMContentLoaded', async() => {
 
                     if (error) throw error;
 
-                    // Atualiza dado local e restaura select
                     const index = todosOrcamentos.findIndex(o => o.COD_ORCAMENTO == id);
                     if (index !== -1) todosOrcamentos[index].STATUS_ORCAMENTO = novoStatus;
 
                     e.target.disabled = false;
                     e.target.style.opacity = '1';
 
-                    // Opcional: Mostrar toast de sucesso rápido
-                    // console.log('Status atualizado');
-
                 } catch (err) {
                     console.error(err);
                     alert('Erro ao atualizar status: ' + err.message);
-                    e.target.value = originalValue || novoStatus; // Tenta reverter
+                    e.target.value = originalValue || novoStatus;
                     e.target.disabled = false;
                     e.target.style.opacity = '1';
                 }
             });
-            // Salva valor original ao focar (para rollback)
+
             sel.addEventListener('focus', (e) => {
                 e.target.setAttribute('data-original', e.target.value);
             });
         });
     }
 
-    // --- FILTRO ---
     if (filterSelect) {
         filterSelect.addEventListener('change', (e) => {
             const status = e.target.value;
@@ -227,11 +215,9 @@ document.addEventListener('DOMContentLoaded', async() => {
         });
     }
 
-    // Inicializa
     fetchOrcamentos();
 });
 
-// Função Auxiliar de Formatação
 function formatarTelefone(v) {
     v = v.replace(/\D/g, "");
     if (v.length > 10) return v.replace(/^(\d{2})(\d)(\d{4})(\d{4})/, "($1) $2$3-$4");
