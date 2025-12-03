@@ -12,17 +12,21 @@ document.addEventListener('DOMContentLoaded', async() => {
         return;
     }
 
-    // Elementos do DOM
+    // Elementos das Tabelas
     const tbodyAtivos = document.getElementById('lista-orcamentos-ativos');
     const tbodyConcluidos = document.getElementById('lista-orcamentos-concluidos');
 
+    // Mensagens de "Vazio" individuais
     const msgSemAtivos = document.getElementById('msg-sem-ativos');
     const msgSemConcluidos = document.getElementById('msg-sem-concluidos');
-    const noDataGeral = document.getElementById('no-data-message');
 
+    // Containers das tabelas (para ocultar se vazio)
     const containerAtivos = document.getElementById('container-ativos');
     const containerConcluidos = document.getElementById('container-concluidos');
+    const tableAtivos = document.getElementById('tabela-ativos');
+    const tableConcluidos = document.getElementById('tabela-concluidos');
 
+    const noDataGeral = document.getElementById('no-data-message');
     const filterSelect = document.getElementById('filtroStatus');
 
     let todosOrcamentos = [];
@@ -57,46 +61,41 @@ document.addEventListener('DOMContentLoaded', async() => {
         if (tbodyAtivos) tbodyAtivos.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Erro ao carregar.</td></tr>';
     }
 
-    // --- FUNÇÃO PRINCIPAL ---
     function distribuirOrcamentos(listaCompleta) {
-        // Limpa tabelas
         tbodyAtivos.innerHTML = '';
         tbodyConcluidos.innerHTML = '';
 
-        // Status considerados "Ativos"
         const statusAtivos = ['Não Visualizado', 'Pendente', 'Em Análise', 'Aprovado'];
 
-        // Separa os dados
         const listaAtivos = listaCompleta.filter(o => statusAtivos.includes(o.STATUS_ORCAMENTO));
-        const listaConcluidos = listaCompleta.filter(o => !statusAtivos.includes(o.STATUS_ORCAMENTO)); // Concluido, Recusado, Cancelado
+        const listaConcluidos = listaCompleta.filter(o => !statusAtivos.includes(o.STATUS_ORCAMENTO));
 
-        // Renderiza cada parte
         renderRows(tbodyAtivos, listaAtivos);
         renderRows(tbodyConcluidos, listaConcluidos);
 
-        // Controla visibilidade das mensagens de "Vazio"
+        // Lógica de Exibição
         const temAtivos = listaAtivos.length > 0;
         const temConcluidos = listaConcluidos.length > 0;
 
-        // Tabela Ativos
+        // Ativos
         if (temAtivos) {
-            tbodyAtivos.parentElement.style.display = 'table';
+            tableAtivos.style.display = 'table';
             msgSemAtivos.style.display = 'none';
         } else {
-            tbodyAtivos.parentElement.style.display = 'none';
+            tableAtivos.style.display = 'none';
             msgSemAtivos.style.display = 'block';
         }
 
-        // Tabela Concluidos
+        // Concluidos
         if (temConcluidos) {
-            tbodyConcluidos.parentElement.style.display = 'table';
+            tableConcluidos.style.display = 'table';
             msgSemConcluidos.style.display = 'none';
         } else {
-            tbodyConcluidos.parentElement.style.display = 'none';
+            tableConcluidos.style.display = 'none';
             msgSemConcluidos.style.display = 'block';
         }
 
-        // Se não tem nada em lugar nenhum
+        // Geral
         if (!temAtivos && !temConcluidos) {
             containerAtivos.style.display = 'none';
             containerConcluidos.style.display = 'none';
@@ -108,7 +107,6 @@ document.addEventListener('DOMContentLoaded', async() => {
         }
     }
 
-    // --- RENDERIZA LINHAS ---
     function renderRows(tbody, lista) {
         lista.forEach(orc => {
             const tr = document.createElement('tr');
@@ -116,7 +114,6 @@ document.addEventListener('DOMContentLoaded', async() => {
             const dataObj = new Date(orc.created_at || orc.DATA_SOLICITACAO);
             const dataFormatada = dataObj.toLocaleDateString('pt-BR');
 
-            // Define classe de cor baseada no status
             const statusRaw = orc.STATUS_ORCAMENTO || 'Não Visualizado';
             let statusClass = 'status-nao-visualizado';
 
@@ -132,14 +129,12 @@ document.addEventListener('DOMContentLoaded', async() => {
                 <td style="padding: 15px; border-bottom: 1px solid #eee;">${dataFormatada}</td>
                 <td style="padding: 15px; border-bottom: 1px solid #eee;">${orc.TIPO_SERVICO}</td>
                 <td style="padding: 15px; border-bottom: 1px solid #eee; text-align:center;">
-                    <button class="btn-ver-desc" style="padding: 6px 12px; background:#f0c029; border:none; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.9em; color:#1a1a1a;">
+                    <button class="btn-ver-desc" style="padding: 5px 10px; background:#f0c029; border:none; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.9em; color:#1a1a1a;">
                         <i class="far fa-eye"></i> Ler
                     </button>
                 </td>
                 <td style="padding: 15px; border-bottom: 1px solid #eee;">
-                    <span class="status-badge ${statusClass}" style="padding: 5px 10px; border-radius: 15px; color: #fff; font-size: 0.85em; font-weight: bold;">
-                        ${statusRaw}
-                    </span>
+                    <span class="status-badge ${statusClass}">${statusRaw}</span>
                 </td>
             `;
 
@@ -155,7 +150,6 @@ document.addEventListener('DOMContentLoaded', async() => {
         });
     }
 
-    // --- LÓGICA DE FILTRO ---
     filterSelect.addEventListener('change', (e) => {
         const filtro = e.target.value;
         if (filtro === 'Todos') {

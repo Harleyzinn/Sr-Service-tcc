@@ -4,6 +4,8 @@ body {
     background-color: #f4f4f4;
     color: #333;
     font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
 }
 
 
@@ -42,30 +44,9 @@ body {
     padding-bottom: 20px;
 }
 
-
-/* Cabeçalho Secundário (Histórico) */
-
-.secondary-header {
-    margin-top: 10px;
-    border-bottom: 1px solid #eee;
-    /* Linha mais fina */
-}
-
-.secondary-header h2 {
-    font-size: 1.8em;
-    color: #555;
-    /* Cor mais discreta */
-    margin-bottom: 5px;
-}
-
-.section-divider {
-    border: 0;
-    border-top: 1px dashed #ccc;
-    margin: 50px 0;
-}
-
 .card-header h1 {
-    font-size: 2.2em;
+    font-family: 'RopaSans-Regular', sans-serif;
+    font-size: 2.5em;
     color: #1a1a1a;
     margin-bottom: 10px;
 }
@@ -76,89 +57,106 @@ body {
 }
 
 
-/* --- Filtro --- */
+/* Cabeçalho Secundário (Filtros e Botões) */
 
-.filter-wrapper {
-    margin-top: 20px;
+.secondary-header {
+    margin-top: 10px;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
-.filter-wrapper label {
+
+/* Botão Novo Pedido */
+
+.btn-novo-orcamento {
+    background-color: #1a1a1a;
+    color: #f0c029;
+    padding: 10px 20px;
+    border-radius: 4px;
+    text-decoration: none;
     font-weight: bold;
+    border: 1px solid #1a1a1a;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-novo-orcamento:hover {
+    background-color: #f0c029;
     color: #1a1a1a;
 }
 
-.filter-wrapper select {
-    padding: 8px 15px;
+
+/* Filtros */
+
+.filter-right label {
+    font-weight: bold;
+    color: #555;
+    margin-right: 10px;
+}
+
+.filter-right select {
+    padding: 8px;
     border: 1px solid #ccc;
-    border-radius: 20px;
-    background-color: #f9f9f9;
-    cursor: pointer;
-    font-size: 0.95em;
-    outline: none;
-    transition: border-color 0.3s;
-}
-
-.filter-wrapper select:focus {
-    border-color: #f0c029;
+    border-radius: 4px;
 }
 
 
-/* --- Tabela --- */
+/* Títulos das Seções (Tabelas) */
+
+.section-title {
+    color: #1a1a1a;
+    font-size: 1.3em;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    border-left: 4px solid #f0c029;
+    padding-left: 10px;
+}
+
+
+/* Tabelas */
 
 .table-responsive {
     overflow-x: auto;
-    border-radius: 8px;
-    border: 1px solid #eee;
     margin-bottom: 20px;
 }
 
-.custom-table {
+.data-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 600px;
+    min-width: 700px;
 }
 
-.custom-table th {
+.data-table th {
     background-color: #1a1a1a;
     color: #f0c029;
-    font-weight: bold;
-    text-transform: uppercase;
-    font-size: 0.9em;
-    letter-spacing: 0.5px;
     padding: 15px;
     text-align: left;
 }
 
-.custom-table td {
+.data-table td {
     padding: 15px;
     border-bottom: 1px solid #eee;
-    color: #555;
-    font-size: 0.95em;
-    vertical-align: middle;
-}
-
-.custom-table tr:hover {
-    background-color: #fcfcfc;
+    color: #333;
 }
 
 
-/* Badges de Status */
+/* Cores dos Status */
 
 .status-badge {
-    padding: 6px 12px;
-    border-radius: 20px;
+    padding: 5px 10px;
+    border-radius: 15px;
+    color: #fff;
     font-size: 0.85em;
     font-weight: bold;
-    color: #fff;
-    text-transform: capitalize;
     display: inline-block;
-    min-width: 100px;
-    text-align: center;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .status-pendente {
@@ -184,7 +182,7 @@ body {
 }
 
 
-/* Botão de Ver Descrição */
+/* Botão Ler */
 
 .btn-ver-desc {
     transition: transform 0.2s, background-color 0.3s !important;
@@ -210,38 +208,16 @@ body {
     margin-bottom: 20px;
 }
 
-.btn-novo-orcamento {
-    background-color: #1a1a1a;
-    color: #f0c029;
-    border: none;
-    padding: 12px 30px;
-    font-size: 1em;
-    font-weight: bold;
-    border-radius: 30px;
-    cursor: pointer;
-    transition: transform 0.2s, background-color 0.3s;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
 
-.btn-novo-orcamento:hover {
-    background-color: #333;
-    color: #f0c029;
-    transform: translateY(-2px);
-}
+/* Responsivo */
 
 @media (max-width: 768px) {
     .content-card {
-        padding: 25px;
+        padding: 20px;
         width: 95%;
     }
-    .card-header h1 {
-        font-size: 1.8em;
-    }
-    .filter-wrapper {
+    .secondary-header {
         flex-direction: column;
+        align-items: flex-start;
     }
 }

@@ -6,14 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meus Orçamentos - SR Service</title>
 
-    <!-- CSS Global -->
     <link rel="stylesheet" href="style.css">
-    <!-- CSS Específico -->
     <link rel="stylesheet" href="consultar_orcamento.css">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
 </head>
@@ -42,20 +38,19 @@
 
             <div class="card-header">
                 <h1>Meus Orçamentos</h1>
-                <p>Gerencie suas solicitações e veja o histórico</p>
+                <p>Acompanhe o status das suas solicitações</p>
             </div>
 
-            <!-- Controles (Botão e Filtro) -->
-            <div class="secondary-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+            <!-- Filtros e Botões -->
+            <div class="secondary-header">
                 <div class="action-left">
-                    <a href="orcamento.html" class="btn-novo-orcamento" style="background-color: #f0c029; color: #1a1a1a; padding: 10px 20px; border-radius: 4px; text-decoration: none; font-weight: bold;">
+                    <a href="orcamento.html" class="btn-novo-orcamento">
                         <i class="fas fa-plus"></i> Novo Pedido
                     </a>
                 </div>
-
-                <div class="filter-right" style="display: flex; align-items: center; gap: 10px;">
-                    <label for="filtroStatus" style="font-weight: bold; color: #555;">Filtrar:</label>
-                    <select id="filtroStatus" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                <div class="filter-right">
+                    <label for="filtroStatus">Filtrar por:</label>
+                    <select id="filtroStatus">
                         <option value="Todos">Todos</option>
                         <option value="Não Visualizado">Não Visualizado</option>
                         <option value="Pendente">Pendente</option>
@@ -64,59 +59,61 @@
                 </div>
             </div>
 
-            <!-- TABELA 1: EM ANDAMENTO -->
-            <div id="container-ativos" style="margin-bottom: 40px;">
-                <h3 class="section-title" style="color: #1a1a1a; border-left: 4px solid #f0c029; padding-left: 10px; margin-bottom: 15px;">
-                    <i class="fas fa-clock"></i> Solicitações em Andamento
-                </h3>
+            <!-- Tabela 1: Ativos -->
+            <div id="container-ativos">
+                <h3 class="section-title">Solicitações em Andamento</h3>
                 <div class="table-responsive">
-                    <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                    <table class="data-table" id="tabela-ativos">
                         <thead>
-                            <tr style="background-color: #1a1a1a; color: #f0c029;">
-                                <th style="padding: 15px;">ID</th>
-                                <th style="padding: 15px;">Data</th>
-                                <th style="padding: 15px;">Serviço</th>
-                                <th style="padding: 15px; text-align: center;">Detalhes</th>
-                                <th style="padding: 15px;">Status</th>
+                            <tr>
+                                <th>ID</th>
+                                <th>Data</th>
+                                <th>Serviço</th>
+                                <th style="text-align:center;">Detalhes</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody id="lista-orcamentos-ativos">
-                            <!-- JS preenche aqui -->
+                            <!-- JS -->
                         </tbody>
                     </table>
-                    <p id="msg-sem-ativos" style="display:none; text-align: center; color: #777; padding: 20px; background: #f9f9f9;">Nenhuma solicitação em andamento.</p>
+                    <p id="msg-sem-ativos" style="display:none; text-align:center; padding:20px; color:#777;">Nenhuma solicitação em andamento.</p>
                 </div>
             </div>
 
-            <!-- TABELA 2: HISTÓRICO -->
+            <!-- Tabela 2: Concluídos (Necessária para o JS não quebrar) -->
             <div id="container-concluidos">
-                <h3 class="section-title" style="color: #1a1a1a; border-left: 4px solid #333; padding-left: 10px; margin-bottom: 15px;">
-                    <i class="fas fa-history"></i> Histórico (Concluídos/Recusados)
-                </h3>
+                <h3 class="section-title" style="border-left-color: #666; color: #555;">Histórico</h3>
                 <div class="table-responsive">
-                    <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                    <table class="data-table" id="tabela-concluidos">
                         <thead>
-                            <tr style="background-color: #333; color: #ccc;">
-                                <th style="padding: 15px;">ID</th>
-                                <th style="padding: 15px;">Data</th>
-                                <th style="padding: 15px;">Serviço</th>
-                                <th style="padding: 15px; text-align: center;">Detalhes</th>
-                                <th style="padding: 15px;">Status</th>
+                            <tr style="background-color: #333 !important;">
+                                <th style="color: #ccc;">ID</th>
+                                <th style="color: #ccc;">Data</th>
+                                <th style="color: #ccc;">Serviço</th>
+                                <th style="text-align:center; color:#ccc;">Detalhes</th>
+                                <th style="color: #ccc;">Status</th>
                             </tr>
                         </thead>
                         <tbody id="lista-orcamentos-concluidos">
-                            <!-- JS preenche aqui -->
+                            <!-- JS -->
                         </tbody>
                     </table>
-                    <p id="msg-sem-concluidos" style="display:none; text-align: center; color: #777; padding: 20px; background: #f9f9f9;">Nenhum histórico encontrado.</p>
+                    <p id="msg-sem-concluidos" style="display:none; text-align:center; padding:20px; color:#777;">Nenhum histórico encontrado.</p>
                 </div>
             </div>
 
-            <!-- Mensagem Geral de Sem Dados -->
-            <div id="no-data-message" class="no-data" style="display: none; text-align: center; padding: 40px; color: #888;">
-                <div style="font-size: 3em; margin-bottom: 15px; color: #ddd;"><i class="fas fa-folder-open"></i></div>
+            <!-- Mensagem Geral de Vazio -->
+            <div id="no-data-message" class="no-data" style="display: none;">
+                <div class="empty-state-icon">
+                    <i class="fas fa-folder-open"></i>
+                </div>
                 <h3>Nenhum orçamento encontrado</h3>
-                <p>Seus pedidos aparecerão aqui.</p>
+                <p>Você ainda não solicitou nenhum serviço conosco.</p>
+                <br>
+                <a href="orcamento.html" class="btn-novo-orcamento">
+                    <i class="fas fa-plus-circle"></i> Solicitar Novo Orçamento
+                </a>
             </div>
 
         </div>
