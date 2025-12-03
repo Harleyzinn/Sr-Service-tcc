@@ -53,18 +53,31 @@ async function setupHeader() {
 
         let buttonsHTML = '';
 
+        // 1. Botão Painel Admin (se for admin)
         if (isAdmin) {
             buttonsHTML += `
-                <a href="admin.html" style="background-color: #333; color: #f0c029; border: 1px solid #f0c029; padding: 6px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.9em; margin-right: 15px; transition: 0.3s; display: inline-flex; align-items: center; gap: 6px;" onmouseover="this.style.backgroundColor='#f0c029'; this.style.color='#000';" onmouseout="this.style.backgroundColor='#333'; this.style.color='#f0c029';">
-                    <i class="fas fa-user-shield"></i> Painel de Admin
+                <a href="admin.html" style="background-color: #333; color: #f0c029; border: 1px solid #f0c029; padding: 6px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.9em; margin-right: 10px; transition: 0.3s; display: inline-flex; align-items: center; gap: 6px;" onmouseover="this.style.backgroundColor='#f0c029'; this.style.color='#000';" onmouseout="this.style.backgroundColor='#333'; this.style.color='#f0c029';">
+                    <i class="fas fa-user-shield"></i> Painel
                 </a>
             `;
         }
 
+        // 2. Botão MEUS PEDIDOS (NOVO!)
+        buttonsHTML += `
+            <a href="consultar_orcamento.html" style="color: #ccc; text-decoration: none; margin-right: 15px; font-weight: 500; font-size: 0.95em; transition: color 0.3s;" onmouseover="this.style.color='#f0c029'" onmouseout="this.style.color='#ccc'">
+                <i class="fas fa-list-ul"></i> Meus Pedidos
+            </a>
+        `;
+
+        // 3. Botão Perfil
         buttonsHTML += `
             <a href="perfil.html" class="btn-user-logged" style="color: #f0c029; text-decoration: none; margin-right: 15px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;">
                 <i class="fas fa-user-circle"></i> ${primeiroNome}
             </a>
+        `;
+
+        // 4. Botão Sair
+        buttonsHTML += `
             <button id="btn-logout" style="background: transparent; border: 1px solid #666; color: #ccc; padding: 5px 10px; border-radius: 4px; cursor: pointer; transition: 0.3s;" onmouseover="this.style.borderColor='#999'; this.style.color='#fff';" onmouseout="this.style.borderColor='#666'; this.style.color='#ccc';">
                 Sair <i class="fas fa-sign-out-alt"></i>
             </button>
@@ -204,7 +217,6 @@ function injectLoginModalHTML() {
         const { error } = await sbClient.auth.signInWithPassword({ email, password });
 
         if (error) {
-            // Modal de erro aparecerá NA FRENTE
             showCustomModal('E-mail ou senha incorretos.', 'Erro de Login');
             btn.innerText = originalText;
             btn.disabled = false;
