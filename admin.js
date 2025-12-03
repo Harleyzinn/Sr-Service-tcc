@@ -1,139 +1,240 @@
 document.addEventListener('DOMContentLoaded', async() => {
-    if (typeof supabase === 'undefined') { console.error('Erro: Supabase não encontrado.'); return; }
+    // 1. Verifica se o Supabase está disponível
+    const sbClient = window.supabase;
+    if (!sbClient) {
+        console.error('Erro CRÍTICO: Cliente Supabase não encontrado.');
+        alert('Erro de sistema: Conexão falhou.');
+        return;
+    }
 
-    const { data: { user } } = await supabase.auth.getUser();
+    // 2. Verifica Login
+    const { data: { user } } = await sbClient.auth.getUser();
+
     if (!user) {
-        alert('Acesso negado.');
+        alert('Acesso negado. Faça login.');
         window.location.href = 'index.html';
         return;
     }
 
-    const { data: perfil } = await supabase.from('usu_cadastro').select('admin').eq('EMAIL_USU', user.email).single();
-    if (!perfil || perfil.admin !== 1) {
-        alert('Acesso restrito a administradores.');
+    // 3. Verifica Permissão de Admin
+    try {
+        const { data: perfil, error } = await sbClient
+            .from('usu_cadastro')
+            .select('admin')
+            .eq('EMAIL_USU', user.email)
+            .single();
+
+        if (error || !perfil || perfil.admin !== 1) {
+            alert('Área restrita apenas para administradores.');
+            window.location.href = 'index.html';
+            return;
+        }
+    } catch (err) {
+        console.error('Erro ao verificar permissão:', err);
         window.location.href = 'index.html';
         return;
     }
 
+    // --- VARIÁVEIS GLOBAIS ---
     let todosOrcamentos = [];
     const tbody = document.getElementById('orcamentos-tbody');
     const filterSelect = document.getElementById('filterStatus');
 
+    // --- FUNÇÃO PARA BUSCAR DADOS (CORRIGIDA) ---
     async function fetchOrcamentos() {
-        const { data, error } = await supabase
-            .from('tb_orcamento')
-            .select('*')
-            .order('COD_ORCAMENTO', { ascending: false });
+        try {
+            tbody.innerHTML = '<tr><td colspan="7" class="loading-text" style="text-align:center; padding:20px;">Carregando pedidos...</td></tr>';
 
-        if (error) {
-            console.error(error);
-            tbody.innerHTML = '<tr><td colspan="6">Erro ao carregar dados.</td></tr>';
-            return;
+            // 1. Busca os orçamentos PRIMEIRO
+            const { data: orcamentos, error: orcError } = await sbClient
+                .from('tb_orcamento')
+                .select('*')
+                .order('COD_ORCAMENTO', { ascending: false });
+
+            if (orcError) throw orcError;
+
+            // 2. Busca os dados dos usuários manualmente para evitar erro de Foreign Key
+            // Cria um array de Promises para buscar os dados de cada usuário
+            const orcamentosCompletos = await Promise.all(orcamentos.map(async(orc) => {
+                let dadosUsuario = { END_USU: 'Não encontrado', TEL_USU: '' };
+
+                if (orc.fk_cod_usuario) {
+                    const { data: userDetails } = await sbClient
+                        .from('usu_cadastro')
+                        .select('END_USU, TEL_USU')
+                        .eq('COD_USUARIO', orc.fk_cod_usuario)
+                        .single();
+
+                    if (userDetails) {
+                        dadosUsuario = userDetails;
+                    }
+                }
+
+                // Retorna o orçamento com os dados do usuário mesclados
+                return {...orc, usu_cadastro: dadosUsuario };
+            }));
+
+            todosOrcamentos = orcamentosCompletos;
+            renderTable(todosOrcamentos);
+
+        } catch (error) {
+            console.error('Erro ao buscar orçamentos:', error);
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red; padding:20px;">Erro ao carregar dados. Verifique o console.</td></tr>';
         }
-
-        todosOrcamentos = data;
-        renderTable(todosOrcamentos);
     }
 
+    // --- FUNÇÃO DE RENDERIZAÇÃO DA TABELA ---
     function renderTable(lista) {
         tbody.innerHTML = '';
 
         if (lista.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px;">Nenhum pedido encontrado.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 30px; color: #888;">Nenhum pedido encontrado.</td></tr>';
             return;
         }
 
         lista.forEach(orc => {
             const tr = document.createElement('tr');
 
+            // Formatação de Data e Hora
             const dataRaw = orc.DATA_SOLICITACAO || orc.created_at || new Date().toISOString();
             const dateObj = new Date(dataRaw);
             const dataStr = dateObj.toLocaleDateString('pt-BR');
             const horaStr = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-            const desc = orc.DESCRICAO || 'Nenhuma descrição informada.';
+            // Dados do Cliente (com fallback)
+            const clienteNome = orc.NOME_CONTATO || 'Desconhecido';
+            const clienteEmpresa = orc.NOME_EMPRESA ? `(${orc.NOME_EMPRESA})` : '';
+            const clienteEmail = orc.EMAIL_CONTATO || 'Sem e-mail';
 
-            // Email com link clicável
-            const emailLink = `<a href="mailto:${orc.EMAIL_CONTATO}" title="Enviar e-mail para ${orc.EMAIL_CONTATO}" style="color: #f0c029; text-decoration: none; border-bottom: 1px dotted #f0c029;">${orc.EMAIL_CONTATO} <i class="fas fa-external-link-alt" style="font-size:0.8em"></i></a>`;
+            // Dados vindos da busca manual (usu_cadastro)
+            const clienteEndereco = orc.usu_cadastro ? .END_USU || 'Endereço não disponível';
+            const clienteTelBanco = orc.usu_cadastro ? .TEL_USU;
+            const clienteTelOrcamento = orc.TELEFONE_CONTATO; // Telefone salvo no pedido
 
-            // Select de Status restrito às opções solicitadas
+            // Prioriza telefone do pedido, senão usa do cadastro
+            let telefoneFinal = clienteTelOrcamento || clienteTelBanco || '';
+            if (telefoneFinal) telefoneFinal = formatarTelefone(telefoneFinal.toString());
+            else telefoneFinal = 'Sem telefone';
+
+            // Descrição e Status
+            const descCompleta = orc.DESCRICAO || 'Sem descrição.';
+            const descResumo = descCompleta.length > 50 ? descCompleta.substring(0, 50) + '...' : descCompleta;
+            const statusAtual = orc.STATUS_ORCAMENTO || 'Não Visualizado';
+
+            // Links clicáveis
+            const emailLink = `<a href="mailto:${clienteEmail}" title="Enviar e-mail" style="color: #f0c029; text-decoration: none;">${clienteEmail}</a>`;
+            const whatsLink = telefoneFinal !== 'Sem telefone' ? `<a href="https://wa.me/55${telefoneFinal.replace(/\D/g,'')}" target="_blank" style="color: #2ecc71; text-decoration: none; margin-left: 5px;" title="Chamar no WhatsApp"><i class="fab fa-whatsapp"></i></a>` : '';
+
+            // Monta HTML da linha
             tr.innerHTML = `
                 <td><strong>#${orc.COD_ORCAMENTO}</strong></td>
                 <td>
                     <div>${dataStr}</div>
-                    <div class="time-info"><i class="far fa-clock"></i> ${horaStr}</div>
+                    <div style="font-size: 0.85em; color: #888;">${horaStr}</div>
                 </td>
                 <td class="client-info">
-                    <div style="font-weight:bold; color:#fff;">${orc.NOME_EMPRESA || 'Particular'}</div>
-                    <div>${orc.NOME_CONTATO}</div>
+                    <div style="font-weight:bold; color:#fff;">${clienteNome} ${clienteEmpresa}</div>
                     <div class="client-email">${emailLink}</div>
+                    <div style="font-size: 0.85em; color: #ccc;">${telefoneFinal} ${whatsLink}</div>
                 </td>
+                <td style="max-width: 200px; font-size: 0.9em; color: #ccc;">${clienteEndereco}</td>
                 <td>${orc.TIPO_SERVICO}</td>
                 
                 <td style="text-align: center;">
-                    <button class="btn-ver-desc" style="padding: 6px 12px; background: #333; color: #f0c029; border: 1px solid #f0c029; border-radius: 4px; cursor: pointer; transition: 0.3s;">
+                    <button class="btn-ver-desc" style="padding: 5px 10px; background: transparent; border: 1px solid #f0c029; color: #f0c029; border-radius: 4px; cursor: pointer; font-size: 0.85em;">
                         <i class="far fa-eye"></i> Ler
                     </button>
                 </td>
 
                 <td>
-                    <select class="status-select" data-id="${orc.COD_ORCAMENTO}">
-                        <option value="Não Visualizado" ${orc.STATUS_ORCAMENTO === 'Não Visualizado' ? 'selected' : ''}>Não Visualizado</option>
-                        <option value="Pendente" ${orc.STATUS_ORCAMENTO === 'Pendente' ? 'selected' : ''}>Pendente</option>
-                        <option value="Concluido" ${orc.STATUS_ORCAMENTO === 'Concluido' ? 'selected' : ''}>Concluído</option>
+                    <select class="status-select" data-id="${orc.COD_ORCAMENTO}" style="padding: 5px; border-radius: 4px; background: #333; color: #fff; border: 1px solid #555;">
+                        <option value="Não Visualizado" ${statusAtual === 'Não Visualizado' ? 'selected' : ''}>Não Visualizado</option>
+                        <option value="Pendente" ${statusAtual === 'Pendente' ? 'selected' : ''}>Pendente</option>
+                        <option value="Em Análise" ${statusAtual === 'Em Análise' ? 'selected' : ''}>Em Análise</option>
+                        <option value="Aprovado" ${statusAtual === 'Aprovado' ? 'selected' : ''}>Aprovado</option>
+                        <option value="Concluido" ${statusAtual === 'Concluido' ? 'selected' : ''}>Concluído</option>
+                        <option value="Recusado" ${statusAtual === 'Recusado' ? 'selected' : ''}>Recusado</option>
                     </select>
                 </td>
             `;
 
-            const btnDesc = tr.querySelector('.btn-ver-desc');
-            btnDesc.addEventListener('mouseover', () => {
-                btnDesc.style.background = '#f0c029';
-                btnDesc.style.color = '#1a1a1a';
-            });
-            btnDesc.addEventListener('mouseout', () => {
-                btnDesc.style.background = '#333';
-                btnDesc.style.color = '#f0c029';
-            });
-
-            btnDesc.addEventListener('click', () => {
+            // Evento: Ver Descrição
+            tr.querySelector('.btn-ver-desc').addEventListener('click', () => {
                 if (typeof showCustomModal === 'function') {
-                    showCustomModal(desc, `Detalhes do Pedido #${orc.COD_ORCAMENTO}`);
+                    showCustomModal(descCompleta, `Detalhes do Pedido #${orc.COD_ORCAMENTO}`);
                 } else {
-                    alert(desc);
+                    alert(descCompleta);
                 }
             });
 
             tbody.appendChild(tr);
         });
 
+        // Evento: Alterar Status
         document.querySelectorAll('.status-select').forEach(sel => {
             sel.addEventListener('change', async(e) => {
                 const id = e.target.dataset.id;
                 const novoStatus = e.target.value;
+                const originalValue = e.target.getAttribute('data-original'); // Para reverter em caso de erro
 
-                const { error } = await supabase
-                    .from('tb_orcamento')
-                    .update({ STATUS_ORCAMENTO: novoStatus })
-                    .eq('COD_ORCAMENTO', id);
+                // Feedback visual (desabilita enquanto salva)
+                e.target.disabled = true;
+                e.target.style.opacity = '0.5';
 
-                if (error) alert('Erro ao atualizar: ' + error.message);
-                else {
+                try {
+                    const { error } = await sbClient
+                        .from('tb_orcamento')
+                        .update({ STATUS_ORCAMENTO: novoStatus })
+                        .eq('COD_ORCAMENTO', id);
+
+                    if (error) throw error;
+
+                    // Atualiza dado local e restaura select
                     const index = todosOrcamentos.findIndex(o => o.COD_ORCAMENTO == id);
                     if (index !== -1) todosOrcamentos[index].STATUS_ORCAMENTO = novoStatus;
+
+                    e.target.disabled = false;
+                    e.target.style.opacity = '1';
+
+                    // Opcional: Mostrar toast de sucesso rápido
+                    // console.log('Status atualizado');
+
+                } catch (err) {
+                    console.error(err);
+                    alert('Erro ao atualizar status: ' + err.message);
+                    e.target.value = originalValue || novoStatus; // Tenta reverter
+                    e.target.disabled = false;
+                    e.target.style.opacity = '1';
                 }
+            });
+            // Salva valor original ao focar (para rollback)
+            sel.addEventListener('focus', (e) => {
+                e.target.setAttribute('data-original', e.target.value);
             });
         });
     }
 
-    filterSelect.addEventListener('change', (e) => {
-        const status = e.target.value;
-        if (status === 'Todos') {
-            renderTable(todosOrcamentos);
-        } else {
-            const filtrados = todosOrcamentos.filter(o => o.STATUS_ORCAMENTO === status);
-            renderTable(filtrados);
-        }
-    });
+    // --- FILTRO ---
+    if (filterSelect) {
+        filterSelect.addEventListener('change', (e) => {
+            const status = e.target.value;
+            if (status === 'Todos') {
+                renderTable(todosOrcamentos);
+            } else {
+                const filtrados = todosOrcamentos.filter(o => o.STATUS_ORCAMENTO === status);
+                renderTable(filtrados);
+            }
+        });
+    }
 
+    // Inicializa
     fetchOrcamentos();
 });
+
+// Função Auxiliar de Formatação
+function formatarTelefone(v) {
+    v = v.replace(/\D/g, "");
+    if (v.length > 10) return v.replace(/^(\d{2})(\d)(\d{4})(\d{4})/, "($1) $2$3-$4");
+    if (v.length > 2) return v.replace(/^(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
+    return v;
+}

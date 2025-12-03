@@ -36,13 +36,13 @@
 
     <main class="admin-wrapper">
         <div class="admin-card">
+
             <div class="admin-header">
-                <div class="header-title">
-                    <h1><i class="fas fa-tools"></i> Gerenciar Pedidos</h1>
-                    <p>Controle total das solicitações de orçamento.</p>
+                <div>
+                    <h1><i class="fas fa-shield-alt"></i> Painel Administrativo</h1>
+                    <p>Gerenciamento de solicitações</p>
                 </div>
 
-                <!-- Filtro de Status -->
                 <div class="filter-container">
                     <label for="filterStatus"><i class="fas fa-filter"></i> Filtrar por:</label>
                     <select id="filterStatus">
@@ -61,15 +61,16 @@
                             <th>ID</th>
                             <th>Data/Hora</th>
                             <th>Cliente</th>
+                            <th>Endereço</th>
+                            <!-- COLUNA NOVA -->
                             <th>Serviço</th>
                             <th style="width: 25%;">Descrição</th>
-                            <!-- Coluna mais larga -->
                             <th>Status</th>
                         </tr>
                     </thead>
                     <tbody id="orcamentos-tbody">
                         <tr>
-                            <td colspan="6" class="loading-text">Carregando pedidos...</td>
+                            <td colspan="7" class="loading-text">Carregando pedidos...</td>
                         </tr>
                     </tbody>
                 </table>
