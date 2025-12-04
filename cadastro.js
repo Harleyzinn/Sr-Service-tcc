@@ -10,10 +10,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- MÁSCARAS ---
     const cpfInput = document.getElementById('cpf');
     const telInput = document.getElementById('tel');
+    const nomeInput = document.getElementById('nome');
+
+    if (nomeInput) {
+        // Restrição de Caracteres no Nome (Apenas Letras)
+        nomeInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '');
+        });
+    }
 
     if (cpfInput) {
         cpfInput.addEventListener('input', (e) => {
             let v = e.target.value;
+            // Remove tudo que não é dígito ou X (para validação frouxa se necessário, mas idealmente só números)
             v = v.replace(/[^0-9xX]/g, "");
 
             if (v.toUpperCase().includes('X')) {
@@ -22,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (v.length > 14) v = v.slice(0, 14);
             }
 
+            // Garante X apenas no final se for CPF
             if (v.length < 11) {
                 v = v.replace(/[xX]/g, "");
             } else {
@@ -30,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 v = mainPart + lastChar;
             }
 
+            // Máscaras
             if (v.length <= 11) {
                 v = v.replace(/(\d{3})(\d)/, "$1.$2");
                 v = v.replace(/(\d{3})(\d)/, "$1.$2");
@@ -46,10 +57,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (telInput) {
         telInput.addEventListener('input', (e) => {
-            let v = e.target.value;
-            v = v.replace(/\D/g, "");
+            let v = e.target.value.replace(/\D/g, "");
+            // Limita tamanho
             if (v.length > 11) v = v.slice(0, 11);
 
+            // Máscara
             if (v.length > 10) {
                 v = v.replace(/^(\d{2})(\d)/, "($1) $2");
                 v = v.replace(/(\d{5})(\d)/, "$1-$2");
@@ -78,15 +90,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const endereco = document.getElementById('endereco').value.trim();
 
             // VALIDAÇÕES
+
+            // 1. Nome (Tamanho e Formato)
+            if (nome.length < 3 || nome.split(' ').length < 2) {
+                return showCustomModal('Por favor, digite seu nome completo (Nome e Sobrenome).', 'Nome Inválido');
+            }
+
+            // 2. Senha
             if (senha !== confirmSenha) return showCustomModal('As senhas não conferem.', 'Erro');
             if (senha.length < 6) return showCustomModal('A senha deve ter no mínimo 6 caracteres.', 'Erro');
 
+            // 3. E-mail
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) return showCustomModal('E-mail inválido.', 'Erro');
 
+            // 4. Telefone
             const telLimpo = telRaw.replace(/\D/g, '');
-            if (telLimpo.length < 10 || telLimpo.length > 11) return showCustomModal('Telefone inválido.', 'Erro');
+            if (telLimpo.length < 10) return showCustomModal('Telefone inválido (mínimo 10 dígitos).', 'Erro');
 
+            // 5. CPF/CNPJ
             const docLimpo = cpfRaw.replace(/[^0-9xX]/g, '');
             if (docLimpo.length === 11) {
                 if (!validarCPF(docLimpo)) return showCustomModal('CPF inválido.', 'Erro');
@@ -102,19 +124,18 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.innerText = 'Verificando...';
 
             try {
-                // 1. VERIFICAÇÃO DE DUPLICIDADE DE CPF/CNPJ (NOVO)
-                // Verifica se já existe alguém com esse CPF no banco
+                // Verificação de Duplicidade
                 const { data: cpfExists, error: searchError } = await sbClient
                     .from('usu_cadastro')
                     .select('COD_USUARIO')
-                    .eq('CPF_CNPJ_USU', cpfRaw) // Busca pelo CPF formatado (conforme salvo)
+                    .eq('CPF_CNPJ_USU', cpfRaw)
                     .maybeSingle();
 
                 if (cpfExists) {
-                    throw new Error('Este CPF ou CNPJ já está cadastrado em nosso sistema.');
+                    throw new Error('Este CPF ou CNPJ já está cadastrado.');
                 }
 
-                // 2. Cria usuário no Auth
+                // Cria usuário Auth
                 btn.innerText = 'Cadastrando...';
                 let baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
                 if (!baseUrl.endsWith('/')) baseUrl += '/';
@@ -133,7 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error('Este e-mail já está cadastrado.');
                 }
 
-                // 3. Salva perfil no Banco
                 if (authData.user) {
                     const { error: insertError } = await sbClient.from('usu_cadastro').insert({
                         NOME_USU: nome,

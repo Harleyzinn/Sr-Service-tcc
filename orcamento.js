@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', async() => {
-    // 1. Configuração Inicial
     const sbClient = window.supabase;
     if (!sbClient) {
         console.error('Erro: Supabase client não encontrado.');
@@ -21,20 +20,17 @@ document.addEventListener('DOMContentLoaded', async() => {
         return;
     }
 
-    // --- PUXAR DADOS DO USUÁRIO (CPF e Outros) ---
-    // Agora buscamos também o CPF_CNPJ_USU para preencher o campo automático
     let perfilUsuario = null;
     try {
         const { data: perfil, error } = await sbClient
             .from('usu_cadastro')
-            .select('*') // Pega tudo para garantir
+            .select('*')
             .eq('EMAIL_USU', user.email)
             .single();
 
         if (perfil) {
             perfilUsuario = perfil;
 
-            // Preenche os campos automaticamente
             const nomeInput = document.getElementById('nome_contato');
             const emailInput = document.getElementById('email_orc');
             const cpfInput = document.getElementById('cpf_orc');
@@ -42,12 +38,10 @@ document.addEventListener('DOMContentLoaded', async() => {
 
             if (nomeInput) nomeInput.value = perfil.NOME_USU || '';
             if (emailInput) emailInput.value = perfil.EMAIL_USU || user.email;
-            if (cpfInput) cpfInput.value = perfil.CPF_CNPJ_USU || ''; // CPF Automático
-            // Opcional: Se quiser puxar o telefone do cadastro tbm
-            // if (telInput && perfil.TEL_USU) telInput.value = formatarTelefone(perfil.TEL_USU.toString());
+            if (cpfInput) cpfInput.value = perfil.CPF_CNPJ_USU || '';
+            if (telInput && perfil.TEL_USU) telInput.value = formatarTelefone(perfil.TEL_USU.toString());
         }
 
-        // Bloqueia Admin
         if (perfil && perfil.admin === 1) {
             if (typeof showCustomModal === 'function') {
                 await showCustomModal('Administradores não enviam orçamentos.', 'Aviso');
@@ -60,7 +54,7 @@ document.addEventListener('DOMContentLoaded', async() => {
         console.error("Erro ao carregar perfil:", err);
     }
 
-    // --- MÁSCARAS ---
+    // --- MÁSCARAS E RESTRIÇÕES ---
     function formatarTelefone(v) {
         v = v.replace(/\D/g, "");
         if (v.length > 11) v = v.slice(0, 11);
@@ -77,14 +71,17 @@ document.addEventListener('DOMContentLoaded', async() => {
         return v;
     }
 
-    // Eventos de Input
     const telInput = document.getElementById('telefone');
     if (telInput) telInput.addEventListener('input', (e) => e.target.value = formatarTelefone(e.target.value));
 
     const nomeInput = document.getElementById('nome_contato');
-    if (nomeInput) nomeInput.addEventListener('input', (e) => e.target.value = e.target.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, ''));
+    if (nomeInput) {
+        nomeInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '');
+        });
+    }
 
-    // --- AUTO-COMPLETE DE ENDEREÇO (ViaCEP) ---
+    // --- AUTO-COMPLETE CEP ---
     const cepInput = document.getElementById('cep_obra');
     const numeroInput = document.getElementById('numero_obra');
     const enderecoInput = document.getElementById('endereco_obra');
@@ -94,22 +91,18 @@ document.addEventListener('DOMContentLoaded', async() => {
 
         cepInput.addEventListener('blur', async(e) => {
             const cep = e.target.value.replace(/\D/g, '');
-
             if (cep.length === 8) {
                 enderecoInput.value = "Buscando...";
                 try {
                     const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
                     const data = await response.json();
-
                     if (!data.erro) {
-                        // Preenche: Rua, Bairro, Cidade - UF
                         enderecoInput.value = `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`;
-                        // Foca no número para o usuário completar
                         numeroInput.focus();
                     } else {
                         showCustomModal('CEP não encontrado.', 'Erro');
                         enderecoInput.value = "";
-                        enderecoInput.removeAttribute('readonly'); // Deixa digitar se não achou
+                        enderecoInput.removeAttribute('readonly');
                         enderecoInput.focus();
                     }
                 } catch (error) {
@@ -122,7 +115,7 @@ document.addEventListener('DOMContentLoaded', async() => {
         });
     }
 
-    // --- ENVIO DO FORMULÁRIO ---
+    // --- ENVIO ---
     const formOrcamento = document.getElementById('form-orcamento');
     if (formOrcamento) {
         formOrcamento.addEventListener('submit', async(event) => {
@@ -136,39 +129,34 @@ document.addEventListener('DOMContentLoaded', async() => {
             try {
                 const form = event.target;
 
-                // Dados Básicos
                 const nome = form.nome_contato.value.trim();
+                const empresa = form.nome_empresa.value.trim();
                 const email = form.email_orc.value.trim();
                 const telRaw = form.telefone.value.replace(/\D/g, '');
 
-                // Dados de Endereço (Combinados)
                 const cep = form.cep_obra.value;
                 const numero = form.numero_obra.value;
                 const enderecoBase = form.endereco_obra.value;
-
-                // Constrói string final do endereço da obra
                 const enderecoCompleto = `${enderecoBase}, Nº ${numero} (CEP: ${cep})`;
 
                 // Validações
-                if (nome.length < 3) throw new Error('Nome inválido.');
-                if (telRaw.length < 10) throw new Error('Telefone inválido.');
+                if (nome.length < 3 || nome.split(' ').length < 2) throw new Error('Nome inválido (insira nome e sobrenome).');
+                if (telRaw.length < 10) throw new Error('Telefone inválido (mínimo 10 dígitos).');
                 if (!enderecoBase || !numero) throw new Error('Endereço incompleto. Preencha CEP e Número.');
 
-                // Verifica sessão
                 const { data: { user: currentUser } } = await sbClient.auth.getUser();
                 if (!currentUser) throw new Error('Sessão expirou.');
 
-                // Monta Descrição Rica (incluindo o endereço da obra no texto, já que é o padrão atual)
                 let descricaoFinal = form.descricao.value;
                 descricaoFinal += `\n\n--- LOCAL DA OBRA ---\n${enderecoCompleto}`;
 
                 const orcamentoData = {
-                    NOME_EMPRESA: form.nome_empresa.value,
+                    NOME_EMPRESA: empresa,
                     NOME_CONTATO: nome,
                     EMAIL_CONTATO: email,
-                    TELEFONE_CONTATO: form.telefone.value, // Salva formatado
+                    TELEFONE_CONTATO: form.telefone.value,
                     TIPO_SERVICO: form.tipo_servico.value,
-                    DESCRICAO: descricaoFinal, // Endereço vai aqui para o Admin ler
+                    DESCRICAO: descricaoFinal,
                     STATUS_ORCAMENTO: 'Não Visualizado',
                     fk_cod_usuario: perfilUsuario.COD_USUARIO
                 };

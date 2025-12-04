@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', async() => {
         return;
     }
 
-    // --- MÁSCARAS DE INPUT ---
+    // --- MÁSCARAS ---
 
     function aplicarMascaraCpf(value) {
         value = value.replace(/\D/g, "");
@@ -27,7 +27,8 @@ document.addEventListener('DOMContentLoaded', async() => {
     }
 
     function formatarTelefone(v) {
-        v = v.replace(/\D/g, "");
+        if (!v) return "";
+        v = v.toString().replace(/\D/g, "");
         if (v.length > 11) v = v.slice(0, 11);
 
         if (v.length > 10) return v.replace(/^(\d{2})(\d)(\d{4})(\d{4})/, "($1) $2$3-$4");
@@ -51,16 +52,14 @@ document.addEventListener('DOMContentLoaded', async() => {
         });
     }
 
-    // Validação de Nome em Tempo Real (Opcional, mas boa prática)
     const nomeInput = document.getElementById('nome');
     if (nomeInput) {
         nomeInput.addEventListener('input', (e) => {
-            // Remove qualquer coisa que não seja letra ou espaço
             e.target.value = e.target.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '');
         });
     }
 
-    // --- CARREGAMENTO DE DADOS ---
+    // --- CARREGAMENTO ---
     const { data: { user } } = await sbClient.auth.getUser();
 
     if (!user) {
@@ -79,7 +78,7 @@ document.addEventListener('DOMContentLoaded', async() => {
         document.getElementById('nome').value = perfil.NOME_USU || '';
         document.getElementById('email').value = perfil.EMAIL_USU || user.email;
         document.getElementById('cpf').value = perfil.CPF_CNPJ_USU ? aplicarMascaraCpf(perfil.CPF_CNPJ_USU) : '';
-        document.getElementById('tel').value = perfil.TEL_USU ? formatarTelefone(perfil.TEL_USU.toString()) : '';
+        document.getElementById('tel').value = perfil.TEL_USU ? formatarTelefone(perfil.TEL_USU) : '';
         document.getElementById('endereco').value = perfil.END_USU || '';
     } else {
         document.getElementById('email').value = user.email;
@@ -98,15 +97,15 @@ document.addEventListener('DOMContentLoaded', async() => {
         });
     });
 
-    // --- SALVAR COM VALIDAÇÕES ---
+    // --- SALVAR ---
     const form = document.getElementById('form-perfil');
     form.addEventListener('submit', async(e) => {
         e.preventDefault();
 
         const nome = document.getElementById('nome').value.trim();
-        const cpfRaw = document.getElementById('cpf').value;
-        const telRaw = document.getElementById('tel').value;
-        const endereco = document.getElementById('endereco').value;
+        const cpfRaw = document.getElementById('cpf').value.trim();
+        const telRaw = document.getElementById('tel').value.trim();
+        const endereco = document.getElementById('endereco').value.trim();
         const novaSenha = document.getElementById('nova_senha').value;
         const confirmaSenha = document.getElementById('confirma_senha').value;
 
@@ -116,21 +115,16 @@ document.addEventListener('DOMContentLoaded', async() => {
             return;
         }
 
-        // 2. Validação de Nome (Sem números/símbolos e completo)
-        const nomeRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/;
-        if (!nomeRegex.test(nome)) {
-            showCustomModal('O nome contém caracteres inválidos. Use apenas letras.', 'Nome Inválido');
-            return;
-        }
+        // 2. Validação de Nome
         if (nome.split(' ').length < 2) {
-            showCustomModal('Por favor, digite seu nome completo.', 'Nome Inválido');
+            showCustomModal('Por favor, digite seu nome completo (Nome e Sobrenome).', 'Nome Incompleto');
             return;
         }
 
         // 3. Validação de Telefone
         const telLimpo = telRaw.replace(/\D/g, '');
-        if (telLimpo.length < 10 || telLimpo.length > 11) {
-            showCustomModal('Telefone inválido (DDD + Número).', 'Erro de Validação');
+        if (telLimpo.length < 10) {
+            showCustomModal('Telefone inválido (mínimo 10 dígitos).', 'Erro de Validação');
             return;
         }
 
@@ -151,7 +145,6 @@ document.addEventListener('DOMContentLoaded', async() => {
             return;
         }
 
-        // Salvar no Banco
         const { error: updateError } = await sbClient
             .from('usu_cadastro')
             .update({
@@ -167,7 +160,6 @@ document.addEventListener('DOMContentLoaded', async() => {
             return;
         }
 
-        // Senha
         if (novaSenha) {
             if (novaSenha.length < 6) {
                 showCustomModal('Senha muito curta.', 'Erro');
