@@ -58,11 +58,12 @@
                     </div>
                 </div>
 
-                <!-- Linha 2: CPF e Email -->
+                <!-- Linha 2: CPF (READONLY) e Email -->
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="cpf_orc"><i class="fas fa-id-card"></i> CPF / CNPJ (Do Cadastro)</label>
-                        <input type="text" id="cpf_orc" name="cpf_orc" readonly style="background-color: #eee; cursor: not-allowed;">
+                        <label for="cpf_orc"><i class="fas fa-id-card"></i> CPF / CNPJ (Cadastrado)</label>
+                        <!-- Campo READONLY e estilizado para parecer desabilitado -->
+                        <input type="text" id="cpf_orc" name="cpf_orc" readonly style="background-color: #eee; cursor: not-allowed; border-color: #ccc; color: #555;">
                     </div>
                     <div class="form-group">
                         <label for="email_orc"><i class="fas fa-envelope"></i> E-mail</label>
@@ -71,12 +72,14 @@
                 </div>
 
                 <!-- Linha 3: Telefone -->
-                <div class="form-group">
-                    <label for="telefone"><i class="fas fa-phone"></i> Telefone / WhatsApp</label>
-                    <input type="tel" id="telefone" name="telefone" required placeholder="(XX) 99999-9999" maxlength="15">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="telefone"><i class="fas fa-phone"></i> Telefone / WhatsApp</label>
+                        <input type="tel" id="telefone" name="telefone" required placeholder="(XX) 99999-9999" maxlength="15">
+                    </div>
                 </div>
 
-                <!-- NOVA LINHA: Endereço Inteligente -->
+                <!-- Linha 4: Endereço Inteligente -->
                 <div class="form-row">
                     <div class="form-group" style="flex: 0 0 140px;">
                         <label for="cep_obra"><i class="fas fa-map-marker-alt"></i> CEP</label>
@@ -92,7 +95,7 @@
                     </div>
                 </div>
 
-                <!-- Linha 4: Serviço -->
+                <!-- Linha 5: Serviço -->
                 <div class="form-group">
                     <label for="tipo_servico"><i class="fas fa-tools"></i> Tipo de Serviço</label>
                     <select id="tipo_servico" name="tipo_servico" required>
@@ -106,7 +109,7 @@
                     </select>
                 </div>
 
-                <!-- Linha 5: Descrição -->
+                <!-- Linha 6: Descrição -->
                 <div class="form-group">
                     <label for="descricao"><i class="fas fa-edit"></i> Descrição Detalhada</label>
                     <textarea id="descricao" name="descricao" rows="6" required placeholder="Descreva o equipamento (modelo, marca), o problema apresentado ou as peças que você precisa..."></textarea>
