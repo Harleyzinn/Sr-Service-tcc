@@ -6,13 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Admin - SR Service</title>
 
-    <!-- CSS Global -->
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="admin.css">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
-    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
 </head>
@@ -61,16 +58,15 @@
                             <th>Data/Hora</th>
                             <th>Cliente</th>
                             <th>CPF/CNPJ</th>
-                            <!-- Coluna Adicionada -->
-                            <th>Endereço</th>
+                            <!-- Coluna Endereço REMOVIDA -->
                             <th>Serviço</th>
-                            <th style="width: 15%;">Descrição</th>
+                            <th style="width: 20%;">Descrição</th>
                             <th>Status</th>
                         </tr>
                     </thead>
                     <tbody id="orcamentos-tbody">
                         <tr>
-                            <td colspan="8" class="loading-text">Carregando pedidos...</td>
+                            <td colspan="7" class="loading-text">Carregando pedidos...</td>
                         </tr>
                     </tbody>
                 </table>
