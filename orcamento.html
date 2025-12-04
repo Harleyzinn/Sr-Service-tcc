@@ -46,29 +46,34 @@
             </div>
 
             <form id="form-orcamento">
-                <!-- Linha 1: Dados Pessoais (Nome e CPF Automático) -->
+                <!-- Linha 1: Dados Pessoais (Nome e Empresa) -->
                 <div class="form-row">
                     <div class="form-group">
                         <label for="nome_contato"><i class="fas fa-user"></i> Nome do Contato</label>
                         <input type="text" id="nome_contato" name="nome_contato" required placeholder="Seu nome completo">
                     </div>
                     <div class="form-group">
-                        <label for="cpf_orc"><i class="fas fa-id-card"></i> CPF / CNPJ (Do Cadastro)</label>
-                        <!-- Readonly para o usuário não mudar, pois vem do perfil -->
-                        <input type="text" id="cpf_orc" name="cpf_orc" readonly style="background-color: #eee; cursor: not-allowed;">
+                        <label for="nome_empresa"><i class="fas fa-building"></i> Empresa (Opcional)</label>
+                        <input type="text" id="nome_empresa" name="nome_empresa" placeholder="Nome da empresa">
                     </div>
                 </div>
 
-                <!-- Linha 2: Contato -->
+                <!-- Linha 2: CPF e Email -->
                 <div class="form-row">
+                    <div class="form-group">
+                        <label for="cpf_orc"><i class="fas fa-id-card"></i> CPF / CNPJ (Do Cadastro)</label>
+                        <input type="text" id="cpf_orc" name="cpf_orc" readonly style="background-color: #eee; cursor: not-allowed;">
+                    </div>
                     <div class="form-group">
                         <label for="email_orc"><i class="fas fa-envelope"></i> E-mail</label>
                         <input type="email" id="email_orc" name="email_orc" required placeholder="seu@email.com">
                     </div>
-                    <div class="form-group">
-                        <label for="telefone"><i class="fas fa-phone"></i> Telefone / WhatsApp</label>
-                        <input type="tel" id="telefone" name="telefone" required placeholder="(XX) 99999-9999" maxlength="15">
-                    </div>
+                </div>
+
+                <!-- Linha 3: Telefone -->
+                <div class="form-group">
+                    <label for="telefone"><i class="fas fa-phone"></i> Telefone / WhatsApp</label>
+                    <input type="tel" id="telefone" name="telefone" required placeholder="(XX) 99999-9999" maxlength="15">
                 </div>
 
                 <!-- NOVA LINHA: Endereço Inteligente -->
@@ -82,8 +87,8 @@
                         <input type="text" id="numero_obra" name="numero_obra" placeholder="123" required>
                     </div>
                     <div class="form-group">
-                        <label for="endereco_obra"><i class="fas fa-road"></i> Endereço Completo (Automático)</label>
-                        <input type="text" id="endereco_obra" name="endereco_obra" readonly placeholder="Preencha o CEP para buscar..." style="background-color: #f9f9f9;">
+                        <label for="endereco_obra"><i class="fas fa-road"></i> Endereço da Obra</label>
+                        <input type="text" id="endereco_obra" name="endereco_obra" readonly placeholder="Preencha o CEP..." style="background-color: #f9f9f9;">
                     </div>
                 </div>
 

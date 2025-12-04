@@ -7,18 +7,17 @@ document.addEventListener('DOMContentLoaded', async() => {
         return;
     }
 
-    // --- MÁSCARA DE CPF/CNPJ ---
+    // --- MÁSCARAS DE INPUT ---
+
     function aplicarMascaraCpf(value) {
-        value = value.replace(/\D/g, ""); // Remove letras
+        value = value.replace(/\D/g, "");
         if (value.length > 14) value = value.slice(0, 14);
 
         if (value.length <= 11) {
-            // Máscara CPF
             value = value.replace(/(\d{3})(\d)/, "$1.$2");
             value = value.replace(/(\d{3})(\d)/, "$1.$2");
             value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
         } else {
-            // Máscara CNPJ
             value = value.replace(/^(\d{2})(\d)/, "$1.$2");
             value = value.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
             value = value.replace(/\.(\d{3})(\d)/, ".$1/$2");
@@ -27,6 +26,17 @@ document.addEventListener('DOMContentLoaded', async() => {
         return value;
     }
 
+    function formatarTelefone(v) {
+        v = v.replace(/\D/g, "");
+        if (v.length > 11) v = v.slice(0, 11);
+
+        if (v.length > 10) return v.replace(/^(\d{2})(\d)(\d{4})(\d{4})/, "($1) $2$3-$4");
+        if (v.length > 6) return v.replace(/^(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
+        if (v.length > 2) return v.replace(/^(\d{2})(\d{0,5})/, "($1) $2");
+        return v;
+    }
+
+    // Eventos de Input
     const cpfInput = document.getElementById('cpf');
     if (cpfInput) {
         cpfInput.addEventListener('input', (e) => {
@@ -34,21 +44,19 @@ document.addEventListener('DOMContentLoaded', async() => {
         });
     }
 
-    // --- MÁSCARA DE TELEFONE ---
-    function formatarTelefone(v) {
-        v = v.replace(/\D/g, "");
-        if (v.length > 11) v = v.slice(0, 11); // Limita a 11 dígitos
-
-        if (v.length > 10) return v.replace(/^(\d{2})(\d)(\d{4})(\d{4})/, "($1) $2$3-$4"); // (XX) 9XXXX-XXXX
-        if (v.length > 6) return v.replace(/^(\d{2})(\d{4})(\d{4})/, "($1) $2-$3"); // (XX) XXXX-XXXX
-        if (v.length > 2) return v.replace(/^(\d{2})(\d{0,5})/, "($1) $2"); // (XX) ...
-        return v;
-    }
-
     const telInput = document.getElementById('tel');
     if (telInput) {
         telInput.addEventListener('input', (e) => {
             e.target.value = formatarTelefone(e.target.value);
+        });
+    }
+
+    // Validação de Nome em Tempo Real (Opcional, mas boa prática)
+    const nomeInput = document.getElementById('nome');
+    if (nomeInput) {
+        nomeInput.addEventListener('input', (e) => {
+            // Remove qualquer coisa que não seja letra ou espaço
+            e.target.value = e.target.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '');
         });
     }
 
@@ -71,7 +79,6 @@ document.addEventListener('DOMContentLoaded', async() => {
         document.getElementById('nome').value = perfil.NOME_USU || '';
         document.getElementById('email').value = perfil.EMAIL_USU || user.email;
         document.getElementById('cpf').value = perfil.CPF_CNPJ_USU ? aplicarMascaraCpf(perfil.CPF_CNPJ_USU) : '';
-        // Carrega e formata o telefone vindo do banco
         document.getElementById('tel').value = perfil.TEL_USU ? formatarTelefone(perfil.TEL_USU.toString()) : '';
         document.getElementById('endereco').value = perfil.END_USU || '';
     } else {
@@ -91,64 +98,83 @@ document.addEventListener('DOMContentLoaded', async() => {
         });
     });
 
+    // --- SALVAR COM VALIDAÇÕES ---
     const form = document.getElementById('form-perfil');
     form.addEventListener('submit', async(e) => {
         e.preventDefault();
 
-        const nome = document.getElementById('nome').value;
+        const nome = document.getElementById('nome').value.trim();
         const cpfRaw = document.getElementById('cpf').value;
-        const telRaw = document.getElementById('tel').value; // Pega o valor do telefone
+        const telRaw = document.getElementById('tel').value;
         const endereco = document.getElementById('endereco').value;
         const novaSenha = document.getElementById('nova_senha').value;
         const confirmaSenha = document.getElementById('confirma_senha').value;
 
-        // VALIDAÇÃO DE TELEFONE
-        const telLimpo = telRaw.replace(/\D/g, ''); // Apenas números
-        if (telLimpo.length < 10 || telLimpo.length > 11) {
-            // Se tiver menos de 10 dígitos (incompleto) ou mais de 11 (invalido), mostra erro
-            if (typeof showCustomModal === 'function') showCustomModal('Telefone inválido. Insira DDD + Número (mínimo 10 dígitos).', 'Erro de Validação');
-            return; // Para o salvamento
+        // 1. Validação de Campos Vazios
+        if (!nome || !cpfRaw || !telRaw || !endereco) {
+            showCustomModal('Todos os campos são obrigatórios.', 'Dados Incompletos');
+            return;
         }
 
-        // VALIDAÇÃO DE CPF/CNPJ
+        // 2. Validação de Nome (Sem números/símbolos e completo)
+        const nomeRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/;
+        if (!nomeRegex.test(nome)) {
+            showCustomModal('O nome contém caracteres inválidos. Use apenas letras.', 'Nome Inválido');
+            return;
+        }
+        if (nome.split(' ').length < 2) {
+            showCustomModal('Por favor, digite seu nome completo.', 'Nome Inválido');
+            return;
+        }
+
+        // 3. Validação de Telefone
+        const telLimpo = telRaw.replace(/\D/g, '');
+        if (telLimpo.length < 10 || telLimpo.length > 11) {
+            showCustomModal('Telefone inválido (DDD + Número).', 'Erro de Validação');
+            return;
+        }
+
+        // 4. Validação de CPF/CNPJ
         const cpfLimpo = cpfRaw.replace(/\D/g, '');
         if (cpfLimpo.length === 11) {
             if (!validarCPF(cpfLimpo)) {
-                if (typeof showCustomModal === 'function') showCustomModal('CPF inválido.', 'Erro');
+                showCustomModal('CPF inválido.', 'Erro');
                 return;
             }
         } else if (cpfLimpo.length === 14) {
             if (!validarCNPJ(cpfLimpo)) {
-                if (typeof showCustomModal === 'function') showCustomModal('CNPJ inválido.', 'Erro');
+                showCustomModal('CNPJ inválido.', 'Erro');
                 return;
             }
         } else {
-            if (typeof showCustomModal === 'function') showCustomModal('Documento inválido (deve ser CPF ou CNPJ).', 'Erro');
+            showCustomModal('Documento inválido.', 'Erro');
             return;
         }
 
+        // Salvar no Banco
         const { error: updateError } = await sbClient
             .from('usu_cadastro')
             .update({
                 NOME_USU: nome,
                 CPF_CNPJ_USU: cpfRaw,
-                TEL_USU: telLimpo, // Salva o telefone limpo (apenas números) no banco
+                TEL_USU: telLimpo,
                 END_USU: endereco
             })
             .eq('EMAIL_USU', user.email);
 
         if (updateError) {
-            if (typeof showCustomModal === 'function') showCustomModal('Erro ao atualizar: ' + updateError.message, 'Erro');
+            showCustomModal('Erro ao atualizar: ' + updateError.message, 'Erro');
             return;
         }
 
+        // Senha
         if (novaSenha) {
             if (novaSenha.length < 6) {
-                if (typeof showCustomModal === 'function') showCustomModal('Senha muito curta.', 'Erro');
+                showCustomModal('Senha muito curta.', 'Erro');
                 return;
             }
             if (novaSenha !== confirmaSenha) {
-                if (typeof showCustomModal === 'function') showCustomModal('Senhas não coincidem.', 'Erro');
+                showCustomModal('Senhas não coincidem.', 'Erro');
                 return;
             }
 
@@ -157,14 +183,14 @@ document.addEventListener('DOMContentLoaded', async() => {
             if (passError) {
                 showCustomModal('Erro ao alterar senha: ' + passError.message, 'Erro');
             } else {
-                await showCustomModal('Senha alterada com sucesso! Você será deslogado.', 'Sucesso');
+                await showCustomModal('Senha alterada! Relogue.', 'Sucesso');
                 await sbClient.auth.signOut();
                 window.location.href = 'index.html';
                 return;
             }
         }
 
-        if (typeof showCustomModal === 'function') await showCustomModal('Perfil atualizado com sucesso.', 'Sucesso');
+        await showCustomModal('Perfil atualizado com sucesso.', 'Sucesso');
 
         document.querySelectorAll('#form-perfil input[type="text"], #form-perfil input[type="tel"]').forEach(i => {
             i.setAttribute('readonly', true);
@@ -173,7 +199,6 @@ document.addEventListener('DOMContentLoaded', async() => {
     });
 });
 
-// FUNÇÕES DE VALIDAÇÃO (Adicionadas ao final)
 function validarCPF(cpf) {
     if (/^(\d)\1+$/.test(cpf)) return false;
     let soma = 0,
