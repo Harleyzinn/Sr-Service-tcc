@@ -46,15 +46,16 @@
             </div>
 
             <form id="form-orcamento">
-                <!-- Linha 1: Dados Pessoais -->
+                <!-- Linha 1: Dados Pessoais (Nome e CPF Automático) -->
                 <div class="form-row">
                     <div class="form-group">
                         <label for="nome_contato"><i class="fas fa-user"></i> Nome do Contato</label>
                         <input type="text" id="nome_contato" name="nome_contato" required placeholder="Seu nome completo">
                     </div>
                     <div class="form-group">
-                        <label for="nome_empresa"><i class="fas fa-building"></i> Empresa (Opcional)</label>
-                        <input type="text" id="nome_empresa" name="nome_empresa" placeholder="Nome da empresa">
+                        <label for="cpf_orc"><i class="fas fa-id-card"></i> CPF / CNPJ (Do Cadastro)</label>
+                        <!-- Readonly para o usuário não mudar, pois vem do perfil -->
+                        <input type="text" id="cpf_orc" name="cpf_orc" readonly style="background-color: #eee; cursor: not-allowed;">
                     </div>
                 </div>
 
@@ -70,16 +71,19 @@
                     </div>
                 </div>
 
-                <!-- NOVA LINHA: Endereço com Auto-complete -->
+                <!-- NOVA LINHA: Endereço Inteligente -->
                 <div class="form-row">
-                    <div class="form-group" style="flex: 0 0 150px;">
-                        <!-- Campo menor para CEP -->
+                    <div class="form-group" style="flex: 0 0 140px;">
                         <label for="cep_obra"><i class="fas fa-map-marker-alt"></i> CEP</label>
-                        <input type="text" id="cep_obra" name="cep_obra" placeholder="00000-000" maxlength="9">
+                        <input type="text" id="cep_obra" name="cep_obra" placeholder="00000-000" maxlength="9" required>
+                    </div>
+                    <div class="form-group" style="flex: 0 0 100px;">
+                        <label for="numero_obra"><i class="fas fa-home"></i> Nº</label>
+                        <input type="text" id="numero_obra" name="numero_obra" placeholder="123" required>
                     </div>
                     <div class="form-group">
-                        <label for="endereco_obra"><i class="fas fa-road"></i> Endereço da Obra (Rua, Nº, Bairro)</label>
-                        <input type="text" id="endereco_obra" name="endereco_obra" placeholder="Endereço preenchido automaticamente ou digite...">
+                        <label for="endereco_obra"><i class="fas fa-road"></i> Endereço Completo (Automático)</label>
+                        <input type="text" id="endereco_obra" name="endereco_obra" readonly placeholder="Preencha o CEP para buscar..." style="background-color: #f9f9f9;">
                     </div>
                 </div>
 
