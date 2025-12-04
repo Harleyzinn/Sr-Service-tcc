@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', async() => {
         return;
     }
 
-    // Verifica Login e Admin
     const { data: { user } } = await sbClient.auth.getUser();
 
     if (!user) {
@@ -39,8 +38,8 @@ document.addEventListener('DOMContentLoaded', async() => {
 
     async function fetchOrcamentos() {
         try {
-            // Ajustado colspan para 7 colunas
-            tbody.innerHTML = '<tr><td colspan="7" class="loading-text" style="text-align:center; padding:20px; color:#f0c029;">Carregando pedidos...</td></tr>';
+            // Ajustado colspan para 6
+            tbody.innerHTML = '<tr><td colspan="6" class="loading-text" style="text-align:center; padding:20px; color:#f0c029;">Carregando pedidos...</td></tr>';
 
             const { data: orcamentos, error: orcError } = await sbClient
                 .from('tb_orcamento')
@@ -59,10 +58,10 @@ document.addEventListener('DOMContentLoaded', async() => {
             let mapaUsuarios = {};
 
             if (userIds.length > 0) {
-                // Removemos END_USU da busca pois não será mais usado na tabela principal
+                // Removemos CPF_CNPJ_USU da busca pois não é mais necessário
                 const { data: usuarios, error: userError } = await sbClient
                     .from('usu_cadastro')
-                    .select('COD_USUARIO, TEL_USU, EMAIL_USU, CPF_CNPJ_USU')
+                    .select('COD_USUARIO, TEL_USU, EMAIL_USU')
                     .in('COD_USUARIO', userIds);
 
                 if (!userError && usuarios) {
@@ -83,7 +82,7 @@ document.addEventListener('DOMContentLoaded', async() => {
 
         } catch (error) {
             console.error('Erro FATAL ao buscar orçamentos:', error);
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red; padding:20px;">Erro ao carregar dados: ${error.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red; padding:20px;">Erro ao carregar dados: ${error.message}</td></tr>`;
         }
     }
 
@@ -91,7 +90,7 @@ document.addEventListener('DOMContentLoaded', async() => {
         tbody.innerHTML = '';
 
         if (lista.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 30px; color: #888;">Nenhum pedido encontrado.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 30px; color: #888;">Nenhum pedido encontrado.</td></tr>';
             return;
         }
 
@@ -108,7 +107,6 @@ document.addEventListener('DOMContentLoaded', async() => {
 
             const dadosCadastrais = orc.usu_cadastro || {};
             const clienteEmail = dadosCadastrais.EMAIL_USU || orc.EMAIL_CONTATO || 'Sem e-mail';
-            const clienteCpf = dadosCadastrais.CPF_CNPJ_USU || '---';
             const clienteTelBanco = dadosCadastrais.TEL_USU;
 
             const clienteTelOrcamento = orc.TELEFONE_CONTATO;
@@ -123,7 +121,7 @@ document.addEventListener('DOMContentLoaded', async() => {
             const emailLink = `<a href="mailto:${clienteEmail}" title="Enviar e-mail" style="color: #f0c029; text-decoration: none;">${clienteEmail}</a>`;
             const whatsLink = telefoneFinal !== 'Sem telefone' ? `<a href="https://wa.me/55${telefoneFinal.replace(/\D/g,'')}" target="_blank" style="color: #2ecc71; text-decoration: none; margin-left: 5px;" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>` : '';
 
-            // REMOVIDA A TD DE ENDEREÇO
+            // Removido CPF
             tr.innerHTML = `
                 <td style="color: #f0c029;"><strong>#${orc.COD_ORCAMENTO}</strong></td>
                 <td>
@@ -135,7 +133,6 @@ document.addEventListener('DOMContentLoaded', async() => {
                     <div class="client-email">${emailLink}</div>
                     <div style="font-size: 0.85em; color: #ccc;">${telefoneFinal} ${whatsLink}</div>
                 </td>
-                <td style="color: #ddd; font-family: monospace; font-size: 0.9em;">${clienteCpf}</td>
                 <td style="color: #ddd;">${orc.TIPO_SERVICO}</td>
                 
                 <td style="text-align: center;">
@@ -164,7 +161,7 @@ document.addEventListener('DOMContentLoaded', async() => {
             tbody.appendChild(tr);
         });
 
-        // Eventos de Status
+        // Eventos de mudança de status (Mantido)
         document.querySelectorAll('.status-select').forEach(sel => {
             sel.addEventListener('change', async(e) => {
                 const id = e.target.dataset.id;
@@ -190,7 +187,7 @@ document.addEventListener('DOMContentLoaded', async() => {
 
                 } catch (err) {
                     console.error(err);
-                    alert('Erro ao atualizar: ' + err.message);
+                    alert('Erro ao atualizar status: ' + err.message);
                     e.target.value = originalValue || novoStatus;
                     e.target.disabled = false;
                     e.target.style.opacity = '1';
