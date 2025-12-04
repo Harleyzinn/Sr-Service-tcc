@@ -1,13 +1,10 @@
-/* Reset específico para garantir o tema escuro no corpo */
+/* Reset específico */
 
 body {
     background-color: #1a1a1a;
     color: #fff;
     font-family: Arial, sans-serif;
 }
-
-
-/* Wrapper Principal */
 
 .admin-wrapper {
     padding-top: 140px;
@@ -17,9 +14,6 @@ body {
     justify-content: center;
 }
 
-
-/* Cartão Admin (Fundo Escuro) */
-
 .admin-card {
     background-color: #2a2a2a;
     border: 1px solid #444;
@@ -27,11 +21,9 @@ body {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     padding: 30px;
     width: 95%;
-    max-width: 1200px;
+    max-width: 1400px;
+    /* Aumentei um pouco para caber CPF */
 }
-
-
-/* Cabeçalho com Flexbox para o Filtro */
 
 .admin-header {
     display: flex;
@@ -44,33 +36,25 @@ body {
     gap: 20px;
 }
 
-.header-title h1 {
-    font-size: 2em;
+.admin-header h1 {
+    font-family: 'RopaSans-Regular', sans-serif;
+    font-size: 2.2em;
     color: #f0c029;
-    margin-bottom: 5px;
+    margin: 0;
 }
 
-.header-title p {
-    color: #bbb;
-    font-size: 0.9em;
-}
-
-
-/* Filtro */
-
-.filter-container {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+.admin-header p {
+    color: #ccc;
+    margin: 5px 0 0 0;
 }
 
 .filter-container label {
     font-weight: bold;
-    color: #f0c029;
+    margin-right: 10px;
 }
 
 .filter-container select {
-    padding: 8px 15px;
+    padding: 8px;
     background-color: #333;
     color: #fff;
     border: 1px solid #555;
@@ -88,7 +72,7 @@ body {
 .admin-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 800px;
+    min-width: 900px;
 }
 
 .admin-table th {
@@ -98,18 +82,34 @@ body {
     text-align: left;
     font-weight: bold;
     border-bottom: 2px solid #333;
+    white-space: nowrap;
 }
 
 .admin-table td {
     padding: 15px;
     border-bottom: 1px solid #333;
     color: #ddd;
-    vertical-align: top;
-    /* Alinha texto no topo para descrições longas */
+    vertical-align: middle;
 }
 
 .admin-table tr:hover {
     background-color: #333;
+}
+
+
+/* Coluna de Status Fixa */
+
+.admin-table td:last-child,
+.admin-table th:last-child {
+    min-width: 170px;
+    /* Garante espaço para o texto do select */
+    width: 170px;
+}
+
+.status-select {
+    width: 100%;
+    /* Ocupa todo o espaço da célula */
+    box-sizing: border-box;
 }
 
 
@@ -126,42 +126,25 @@ body {
 
 .time-info {
     font-size: 0.85em;
-    color: #f0c029;
-    font-weight: bold;
-    margin-top: 4px;
-}
-
-
-/* Select de Status na Tabela */
-
-.status-select {
-    padding: 6px;
-    border-radius: 4px;
-    background-color: #444;
-    color: #fff;
-    border: 1px solid #666;
-    cursor: pointer;
-    width: 100%;
-}
-
-.status-select:focus {
-    border-color: #f0c029;
-    outline: none;
+    color: #888;
 }
 
 .loading-text {
-    text-align: center;
-    padding: 40px;
-    color: #888;
-    font-style: italic;
+    color: #f0c029;
+    font-weight: bold;
+    font-size: 1.2em;
 }
 
-
-/* Responsividade */
-
 @media (max-width: 768px) {
+    .admin-card {
+        padding: 15px;
+        width: 100%;
+        border-radius: 0;
+        border: none;
+    }
     .admin-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: 15px;
     }
 }
