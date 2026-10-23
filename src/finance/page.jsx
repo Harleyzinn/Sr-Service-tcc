@@ -32,6 +32,7 @@ import {
 } from "../ui";
 import { usePreferences } from "../theme";
 import { useOnline } from "../network";
+import ImportDialog from "./import-dialog";
 import "./styles.css";
 const displayDate = (value) => date(value + "T12:00:00Z");
 const labels = {
@@ -402,7 +403,17 @@ function FinanceForm({ model, accounts, month, onSave, busy, onClose }) {
   );
 }
 export default function Finance() {
-  const { data, loading, error, busy, refresh, mutate, demo } = useFinance();
+  const {
+    data,
+    loading,
+    refreshing,
+    lastSynced,
+    error,
+    busy,
+    refresh,
+    mutate,
+    demo,
+  } = useFinance();
   const { preferences } = usePreferences();
   const toast = useToast();
   const [params, setParams] = useSearchParams();
@@ -417,6 +428,7 @@ export default function Finance() {
   const [from, to] = monthRange(month);
   const [model, setModel] = useState(null);
   const [confirm, setConfirm] = useState(null);
+  const [importing, setImporting] = useState(false);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [category, setCategory] = useState("");
@@ -602,11 +614,18 @@ export default function Finance() {
       >
         <button
           className="button secondary"
-          disabled={busy || loading}
-          onClick={refresh}
+          disabled={busy || loading || refreshing}
+          onClick={() => refresh(true)}
         >
           <Icon name="RefreshCw" size={16} />
           Atualizar
+        </button>
+        <button
+          className="button secondary"
+          disabled={!canWrite}
+          onClick={() => setImporting(true)}
+        >
+          <Icon name="Upload" size={16} /> Importar CSV
         </button>
         <button
           className="button secondary"
@@ -633,6 +652,20 @@ export default function Finance() {
             ? "Demonstração: seus registros ficam somente neste navegador."
             : "Gravações confirmadas são persistidas no Firestore."}
         </span>
+      </div>
+      <div className="finance-sync" role="status">
+        <Icon
+          name={refreshing ? "RefreshCw" : "ShieldCheck"}
+          size={14}
+          className={refreshing ? "spin" : ""}
+        />
+        {refreshing
+          ? "Consultando atualizações…"
+          : error
+            ? "Não foi possível confirmar a última atualização."
+            : lastSynced
+              ? `Consulta confirmada às ${lastSynced.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}. Atualizamos ao retornar à aba.`
+              : "Aguardando primeira consulta."}
       </div>
       <nav className="finance-tabs" aria-label="Módulos financeiros">
         {tabs.map(([id, icon, label]) => (
@@ -1219,6 +1252,19 @@ export default function Finance() {
             </>
           )}
         </>
+      )}
+      {importing && (
+        <ImportDialog
+          canPersist={Boolean(demo || online)}
+          accounts={data.accounts}
+          entries={data.entries}
+          busy={busy}
+          onClose={() => setImporting(false)}
+          onImport={async (rows) => {
+            await mutate((repo) => repo.createEntries(rows, data.accounts));
+            toast(`${rows.length} lançamento(s) importado(s).`);
+          }}
+        />
       )}
       {model && (
         <Modal

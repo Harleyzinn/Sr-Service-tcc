@@ -1,17 +1,18 @@
 import {
   collection,
   doc,
-  getDoc,
   getDocs,
   query,
   orderBy,
   limit,
   startAfter,
+  where,
   runTransaction,
   serverTimestamp,
 } from "firebase/firestore/lite";
 import { db } from "../firebase";
 import { collections, validate, entryPayload } from "./domain";
+import { incrementalLoader } from "./incremental-loader";
 const allowed = {
   accounts: ["name", "type", "opening_cents"],
   entries: [
@@ -63,6 +64,24 @@ const normalize = (s) => ({
 });
 export function financeRepository(user, demo) {
   const key = localKey(user, demo);
+  const source = crypto.randomUUID();
+  const channelName = `sr-finance:${db?.app.options.projectId || "unconfigured"}:${demo || "real"}:${user.id}`;
+  const openChannel = () => {
+    try {
+      return typeof BroadcastChannel === "function"
+        ? new BroadcastChannel(channelName)
+        : null;
+    } catch {
+      return null;
+    }
+  };
+  const announce = () => {
+    const channel = openChannel();
+    if (channel) {
+      channel.postMessage({ source });
+      channel.close();
+    }
+  };
   const ref = (kind, id) => doc(db, "users", user.id, kind, id);
   const connected = () => {
     if (!demo && !navigator.onLine)
@@ -70,33 +89,43 @@ export function financeRepository(user, demo) {
         "Sem conexão. Conecte-se para consultar ou gravar no Firestore. Nenhuma gravação foi confirmada.",
       );
   };
+  const loader = incrementalLoader(
+    collections,
+    async (kind, { since, after, size }) => {
+      const constraints = [orderBy("updated_at"), limit(size)];
+      if (since) constraints.push(where("updated_at", ">=", since));
+      if (after) constraints.push(startAfter(after));
+      const snapshot = await getDocs(
+        query(collection(db, "users", user.id, kind), ...constraints),
+      );
+      return {
+        rows: snapshot.docs.map(normalize),
+        after: snapshot.docs.at(-1),
+        watermark: snapshot.docs.at(-1)?.data().updated_at,
+      };
+    },
+  );
   return {
-    async load() {
+    subscribeChanges(listener) {
+      const channel = openChannel();
+      if (channel)
+        channel.onmessage = (event) => {
+          if (event.data?.source && event.data.source !== source) listener();
+        };
+      const storage = (event) => {
+        if (demo && event.key === key) listener();
+      };
+      if (!channel) window.addEventListener("storage", storage);
+      return () => {
+        channel?.close();
+        window.removeEventListener("storage", storage);
+      };
+    },
+    getReadMetrics: loader.getReadMetrics,
+    async load(options) {
       connected();
       if (demo) return localRead(key);
-      const result = {};
-      await Promise.all(
-        collections.map(async (kind) => {
-          const rows = [];
-          let cursor = null;
-          while (true) {
-            const constraints = [orderBy("__name__"), limit(250)];
-            if (cursor) constraints.push(startAfter(cursor));
-            const snapshot = await getDocs(
-              query(collection(db, "users", user.id, kind), ...constraints),
-            );
-            rows.push(...snapshot.docs.map(normalize));
-            if (rows.length > 10000)
-              throw new Error(
-                "A coleção excede 10 mil registros. Use uma exportação administrativa e consolidação antes de calcular totais neste módulo.",
-              );
-            if (snapshot.size < 250) break;
-            cursor = snapshot.docs.at(-1);
-          }
-          result[kind] = rows;
-        }),
-      );
-      return result;
+      return loader.load(options);
     },
     async save(kind, id, values, expected = 0, accounts = []) {
       connected();
@@ -124,9 +153,10 @@ export function financeRepository(user, demo) {
         };
         data[kind] = [value, ...data[kind].filter((row) => row.id !== id)];
         localStorage.setItem(key, JSON.stringify(data));
+        announce();
         return value;
       }
-      return runTransaction(db, async (tx) => {
+      const result = await runTransaction(db, async (tx) => {
         const snapshot = await tx.get(ref(kind, id));
         const previous = snapshot.exists() ? snapshot.data() : null;
         if (previous && expected === 0) {
@@ -148,9 +178,24 @@ export function financeRepository(user, demo) {
         tx.set(ref(kind, id), value);
         return { id, ...value };
       });
+      announce();
+      return result;
     },
     async createEntries(rows, accounts) {
       connected();
+      if (
+        !Array.isArray(rows) ||
+        rows.length < 1 ||
+        rows.length > 100 ||
+        rows.some(
+          (r) =>
+            typeof r.id !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(r.id),
+        ) ||
+        new Set(rows.map((r) => r.id)).size !== rows.length
+      )
+        throw new Error(
+          "A operação deve conter entre 1 e 100 lançamentos com identificadores únicos.",
+        );
       rows.forEach((e) => validate("entries", entryPayload(e), accounts));
       if (demo) {
         const data = localRead(key);
@@ -171,6 +216,7 @@ export function financeRepository(user, demo) {
               updated_at: new Date().toISOString(),
             });
         localStorage.setItem(key, JSON.stringify(data));
+        announce();
         return;
       }
       await runTransaction(db, async (tx) => {
@@ -196,6 +242,7 @@ export function financeRepository(user, demo) {
             });
         });
       });
+      announce();
     },
   };
 }

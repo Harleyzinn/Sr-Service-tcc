@@ -1,3 +1,117 @@
+.finance-sync {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #60798c;
+  font-size: 11px;
+  line-height: 1.7;
+  margin: -9px 0 23px;
+}
+.finance-sync svg {
+  flex-shrink: 0;
+}
+.finance-import > p {
+  line-height: 1.8;
+  font-size: 13px;
+  color: #617c91;
+}
+.finance-import > .text-link {
+  margin: 5px 0 18px;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+.finance-import form > .field {
+  margin: 16px 0;
+}
+.finance-import input[type="file"] {
+  width: 100%;
+  padding: 12px;
+  font-size: 12px;
+}
+.finance-import .form-hint {
+  font-size: 12px;
+  line-height: 1.8;
+}
+.import-format {
+  margin: 18px 0;
+  color: #617c91;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.import-format summary {
+  cursor: pointer;
+  padding: 5px 0;
+}
+:root[data-theme="dark"] .import-format {
+  color: #a6bece;
+}
+.import-preview {
+  margin-top: 25px;
+  border-top: 1px solid var(--line);
+  padding-top: 22px;
+}
+.import-preview h3 {
+  font-size: 16px;
+  margin: 0 0 16px;
+}
+.import-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-size: 12px;
+  padding-bottom: 15px;
+}
+.import-counts strong {
+  color: #487d6e;
+}
+.import-preview .message {
+  font-size: 12px;
+  line-height: 1.8;
+  margin-bottom: 18px;
+}
+.import-preview ul {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+.import-records {
+  max-height: 260px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.import-records article {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+.import-records article > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.import-records article > span {
+  text-align: right;
+  white-space: nowrap;
+}
+.import-records small {
+  display: block;
+  margin-top: 6px;
+  color: #617c91;
+  font-size: 10px;
+  line-height: 1.6;
+  white-space: normal;
+}
+:root[data-theme="dark"] .finance-sync,
+:root[data-theme="dark"] .finance-import > p,
+:root[data-theme="dark"] .import-records small {
+  color: #a6bece;
+}
+:root[data-theme="dark"] .import-counts strong {
+  color: #9bcbb8;
+}
 .finance-privacy {
   display: flex;
   gap: 10px;

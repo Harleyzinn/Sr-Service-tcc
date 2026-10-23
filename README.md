@@ -58,15 +58,29 @@ O identificador da operação acompanha o rascunho: repetir o envio dos mesmos d
 - **Painel:** saldo realizado, entradas e gastos mensais, comparação de despesas com o mês anterior, gráfico interativo de seis meses e projeção em 30 dias. A projeção inclui pendências registradas (inclusive atrasadas) e ocorrências virtuais do início do mês atual até o horizonte de 30 dias. Previsões de séries em meses anteriores podem ser consultadas pela seleção de mês; não são assumidas como pagamentos ou atrasos confirmados.
 - **Planejamento:** limites por mês/categoria e metas com reserva informada manualmente. A reserva de uma meta não movimenta nem duplica o saldo das contas. Alertas apontam vencimentos, uso de 80% ou mais do limite e despesa superior ao dobro da mediana da categoria quando há pelo menos três registros históricos. Nenhuma análise é gerada por IA externa.
 - **Preferências:** tema e seleção dos widgets de gráfico, alertas e metas. Contas reais persistem no Firestore; demonstração utiliza armazenamento local separado por conta.
-- **Exportação:** JSON com os cinco conjuntos de registros persistidos, versão de esquema e data da exportação; CSV contém somente o mês e os filtros selecionados e identifica previsões virtuais. O JSON não inclui credenciais, perfis, pedidos ou preferências. Não há importador/restauração automática nesta versão.
+- **Exportação:** JSON com os cinco conjuntos de registros persistidos, versão de esquema e data da exportação; CSV contém somente o mês e os filtros selecionados e identifica previsões virtuais. O JSON não inclui credenciais, perfis, pedidos ou preferências. Não há restaurador de backup JSON nesta versão.
+
+### Importação de lançamentos em CSV
+
+**Importar CSV** permite escolher uma conta e um arquivo UTF-8 de até 1 MB com no máximo 100 registros. A interface oferece um modelo para download e uma prévia completa antes da confirmação. O parser aceita ponto e vírgula ou vírgula como separador, campos entre aspas, aspas escapadas, quebra de linha em descrições e BOM.
+
+Colunas obrigatórias: `Data`, `Descrição`, `Tipo` e `Valor (R$)`. O tipo é `Entrada` ou `Gasto`; datas aceitam `AAAA-MM-DD` e `DD/MM/AAAA`. Categoria é opcional (padrão `Outros`); situação é opcional (padrão `Previsto`) e aceita `Realizado`, `Previsto` ou `Cancelado`. Valores positivos usam até duas casas decimais; o formato brasileiro `1.234,56` também é aceito. Valores com sinal negativo ou separadores ambíguos são recusados.
+
+Um erro em qualquer registro bloqueia o arquivo inteiro. Transferências e previsões virtuais de recorrências são recusadas: devem usar as funções que preservam origem/destino e identidade da série. A gravação válida ocorre em uma única transação. O importador não é um leitor universal de extratos bancários nem restaura backups JSON.
+
+IDs determinísticos reconhecem a repetição do mesmo conteúdo, mesmo com reordenação de linhas, e não restauram um lançamento cancelado. Linhas idênticas dentro do arquivo mantêm identidades distintas; registros semelhantes aos cadastrados manualmente ficam excluídos por padrão, com inclusão explícita após conferência. Se o livro mudar durante a prévia, é necessário analisar novamente. A confirmação real fica bloqueada sem conexão. Nenhum registro existente é sobrescrito pela importação.
 
 O financeiro começa vazio, inclusive na demonstração. **Uma proposta comercial não é um recebimento**: nenhum valor dos orçamentos é lançado automaticamente. As operações reais são confirmadas somente após resposta do Firestore. Em erro de leitura, o painel não apresenta totais parciais.
 
 ### Sincronização, custos e limites
 
-Os dispositivos consultam o mesmo Firestore ao abrir/atualizar o módulo e após gravações; a volta da conexão também dispara consulta. Não há listener em tempo real, fila de escrita offline ou cache persistente do financeiro: o aviso de conexão informa essa limitação e os rascunhos de orçamento continuam locais. Não há importação automática dos dados da demonstração para uma conta real.
+Os dispositivos consultam o mesmo Firestore ao abrir/atualizar o módulo, após gravações e ao retornar à aba ou recuperar a conexão. Abas visíveis da mesma origem e conta notificam alterações por BroadcastChannel, com agrupamento de eventos; a mensagem contém somente um sinal de invalidação, sem registros financeiros. Sem suporte ao canal, permanece a atualização por foco/reconexão e, na demonstração, pelo evento de armazenamento. Não há listener contínuo no servidor, fila de escrita offline ou cache persistente do financeiro: o aviso de conexão informa essa limitação e os rascunhos de orçamento continuam locais. Não há importação automática dos dados da demonstração para uma conta real.
 
-As coleções financeiras são consultadas em lotes de 250 documentos; os totais ainda dependem da leitura do histórico completo, e cada atualização pode consumir novamente essas leituras. Acima de 10 mil registros em uma coleção, o cálculo é interrompido com orientação, sem truncar saldos. A listagem industrial anterior ainda carrega todos os pedidos autorizados. Antes de escalar esses volumes, implemente consolidações transacionais no servidor e consultas paginadas adequadas aos relatórios; a paginação visual não reduz essas leituras.
+As coleções financeiras são consultadas em lotes de 250 documentos. A primeira consulta lê o histórico completo; as seguintes, na mesma montagem do módulo, mesclam somente documentos com `updated_at` a partir da última marca de cada coleção. As marcas preservam a precisão do Timestamp e a fronteira é inclusiva: registros com o mesmo timestamp podem ser relidos para evitar lacunas. Falhas não avançam as marcas nem substituem o conjunto por dados parciais; consultas simultâneas são serializadas. O cache fica apenas na memória da instância, sem compartilhamento entre contas, e o botão **Atualizar** faz uma reconciliação completa. Exclusões administrativas fora do aplicativo exigem essa atualização completa ou recarga da página; as regras Web impedem exclusões.
+
+Em teste no emulador com 600 lançamentos e uma conta, a consulta inicial recebeu 601 documentos; outra sem mudanças recebeu 2; após alterar um lançamento antigo e criar outro, recebeu 4. São documentos retornados nas consultas, não medição de faturamento: consultas vazias têm cobrança mínima e validações/transações podem ler documentos adicionais. A primeira consulta e novas montagens ainda têm custo proporcional ao histórico.
+
+Acima de 10 mil registros em uma coleção, o cálculo é interrompido com orientação, sem truncar saldos. Paginação que não termina por mudanças contínuas também é interrompida. A listagem industrial anterior ainda carrega todos os pedidos autorizados. Antes de escalar esses volumes, implemente consolidações transacionais no servidor e consultas paginadas adequadas aos relatórios; a paginação visual não reduz essas leituras.
 
 Não há integração bancária, fechamento de fatura, processamento de pagamentos, notificações push ou agendador de cobranças. Cartões e metas são controles manuais identificados na interface.
 
@@ -125,11 +139,11 @@ npm run test:firebase
 npm run build
 ```
 
-`npm test` verifica documentos, validação, busca, exportação segura, centavos, parcelas, transferências, recorrências, calendários, projeções e limites. `test:e2e` percorre as páginas e as demonstrações sem configuração real, incluindo financeiro, recarga, cancelamento/restauração, exportação JSON, temas e celular. Execute essa suíte sem um `.env` preenchido, pois ela também verifica mensagens de configuração ausente.
+`npm test` verifica documentos, validação, busca, exportação segura, centavos, parcelas, transferências, recorrências, calendários, projeções, limites, parser CSV, identidades de importação e consultas incrementais. `test:e2e` percorre as páginas e as demonstrações sem configuração real, incluindo financeiro, recarga, cancelamento/restauração, exportação JSON, importação validada, prévia invalidada por outra edição, temas e celular. Execute essa suíte sem um `.env` preenchido, pois ela também verifica mensagens de configuração ausente.
 
 `test:rules` inicia o emulador Firestore com o projeto fictício `demo-sr-service`, publica as regras localmente e testa acessos permitidos e bloqueados, isolamento entre clientes, papéis, imutabilidade e histórico obrigatório. Requer Java 21+.
 
-`test:firebase` inicia os emuladores Authentication e Firestore e executa jornadas no navegador: cadastro, confirmação de e-mail, login, gravação de orçamento, atualização de proposta por administrador, recuperação e acesso com a nova senha; fluxo de popup Google no emulador; financeiro persistido, repetição idempotente, conflito de versões, consulta em segunda aba, preferências e renovação de token sem perder formulário. Os códigos de e-mail são obtidos do emulador; nenhum e-mail é enviado. A suíte usa a porta 5174 e configuração de emuladores apenas no processo de testes.
+`test:firebase` inicia os emuladores Authentication e Firestore e executa jornadas no navegador: cadastro, confirmação de e-mail, login, gravação de orçamento, atualização de proposta por administrador, recuperação e acesso com a nova senha; fluxo de popup Google no emulador; financeiro persistido, repetição idempotente, conflito de versões, consulta em segunda aba, preferências e renovação de token sem perder formulário; medição de consultas incrementais com 600 lançamentos, atualização entre abas e importação atômica de 100 registros, incluindo reimportação e bloqueio offline. Os códigos de e-mail são obtidos do emulador; nenhum e-mail é enviado. A suíte usa a porta 5174 e configuração de emuladores apenas no processo de testes.
 
 Para desenvolvimento manual com emuladores, use um projeto fictício `demo-sr-service`, preencha as variáveis Web de teste e defina `VITE_FIREBASE_USE_EMULATORS=true`. Inicie:
 
@@ -180,6 +194,9 @@ src/
   ui.jsx               Componentes e layouts
   finance/domain.js    Regras de caixa, calendário e recorrências
   finance/repository.js Persistência transacional real e demo isolada
+  finance/incremental-loader.js Cache de consulta versionado e cursores
+  finance/csv-import.js Parser, validação e identidades de importação
+  finance/import-dialog.jsx Prévia e confirmação de importação
   finance/use-finance.jsx Estado, consulta e confirmação de gravações
   finance/page.jsx     Painel e fluxos financeiros
   theme.jsx            Preferências locais/Firebase e tema

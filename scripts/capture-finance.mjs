@@ -1,5 +1,6 @@
 import { chromium, expect } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
+import { today } from "../src/finance/domain.js";
 await mkdir("artifacts", { recursive: true });
 const browser = await chromium.launch();
 try {
@@ -69,6 +70,34 @@ try {
     .getByRole("dialog")
     .getByRole("button", { name: "Cancelar", exact: true })
     .click();
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole("button", { name: "Importar CSV", exact: true }).click();
+  dialog = page.getByRole("dialog");
+  await dialog
+    .getByLabel("Arquivo CSV", { exact: true })
+    .setInputFiles({
+      name: "exemplo.csv",
+      mimeType: "text/csv",
+      buffer: Buffer.from(
+        `Data;Descrição;Categoria;Tipo;Situação;Valor (R$)\n${today()};Ferramentas de demonstração;Equipamentos;Gasto;Realizado;125,50\n2099-01-01;Recebimento de demonstração;Serviços;Entrada;Previsto;450`,
+      ),
+    });
+  await dialog
+    .getByRole("button", { name: "Analisar arquivo", exact: true })
+    .click();
+  await expect(dialog.getByRole("status")).toContainText("2 para importar");
+  await page.screenshot({
+    path: "artifacts/finance-import-desktop.png",
+    fullPage: true,
+    animations: "disabled",
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: "artifacts/finance-import-mobile.png",
+    fullPage: true,
+    animations: "disabled",
+  });
+  await dialog.getByRole("button", { name: "Cancelar", exact: true }).click();
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("http://127.0.0.1:5173/app");
   await page.getByRole("heading", { name: /Olá, Mariana/ }).waitFor();
