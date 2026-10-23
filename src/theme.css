@@ -8,15 +8,15 @@
   gap: 10px;
   padding: 15px 18px;
   border-radius: 12px;
-  background: #f08b36;
-  color: #152d40;
+  background: #f0c836;
+  color: #292929;
   font-size: 12px;
   font-weight: 700;
-  box-shadow: 0 6px 25px #10263830;
+  box-shadow: 0 6px 25px #23232330;
   max-width: calc(100vw - 36px);
 }
 .chat-launcher:hover {
-  background: #ffab65;
+  background: #ffde65;
 }
 @media (max-width: 760px) {
   .chat-launcher {
@@ -61,9 +61,9 @@
   font-size: 13px;
 }
 .theme-options button.selected {
-  border-color: #d89a65;
+  border-color: #d8bf65;
   background: #fff7ef;
-  color: #ae703d;
+  color: #ae963d;
 }
 .theme-toggle {
   flex-shrink: 0;
@@ -75,14 +75,14 @@
 .google-letter {
   font-size: 20px;
   font-weight: 750;
-  color: #527eb3;
+  color: #787878;
 }
 .auth-divider {
   display: flex;
   align-items: center;
   gap: 13px;
   margin: 20px 0;
-  color: #8da0ad;
+  color: #9d9d9d;
   font-size: 10px;
 }
 .auth-divider > span {
@@ -92,9 +92,9 @@
 }
 .network-notice {
   padding: 13px 22px;
-  background: #fff1dc;
-  border-bottom: 1px solid #e9d6b9;
-  color: #976b32;
+  background: #fff7dc;
+  border-bottom: 1px solid #e9dfb9;
+  color: #978132;
   font-size: 12px;
   line-height: 1.7;
   position: relative;
@@ -114,77 +114,77 @@
   border-radius: 8px;
 }
 :root[data-theme="dark"] {
-  --navy: #dce8f2;
-  --navy2: #a8c8df;
-  --muted: #a4b6c6;
-  --line: #2a4052;
-  --paper: #102233;
-  background: #0c1a27;
-  color: #dce8f2;
+  --navy: #e6e6e6;
+  --navy2: #c3c3c3;
+  --muted: #b3b3b3;
+  --line: #3d3d3d;
+  --paper: #1f1f1f;
+  background: #181818;
+  color: #e6e6e6;
   color-scheme: dark;
 }
 :root[data-theme="dark"] body {
-  background: #0c1a27;
-  color: #dce8f2;
+  background: #181818;
+  color: #e6e6e6;
 }
 :root[data-theme="dark"] .public-header {
-  background: #102435ee;
+  background: #212121ee;
   border-color: var(--line);
 }
 :root[data-theme="dark"] .public-header .brand-symbol,
 :root[data-theme="dark"] .public-header .brand-name,
 :root[data-theme="dark"] .mobile-brand .brand-symbol {
-  color: #e5eef6;
+  color: #ededed;
 }
 :root[data-theme="dark"] .portal,
 :root[data-theme="dark"] .portal-main {
-  background: #0d1d2c;
+  background: #1b1b1b;
 }
 :root[data-theme="dark"] .portal-header,
 :root[data-theme="dark"] .panel,
 :root[data-theme="dark"] .stat-card,
 :root[data-theme="dark"] .auth-form-area,
 :root[data-theme="dark"] .modal {
-  background: #152c3e;
-  color: #dae6ef;
+  background: #282828;
+  color: #e4e4e4;
   border-color: var(--line);
 }
 :root[data-theme="dark"] input,
 :root[data-theme="dark"] textarea,
 :root[data-theme="dark"] select {
-  background: #102435;
-  color: #d9e6ef;
-  border-color: #344b5f;
+  background: #212121;
+  color: #e4e4e4;
+  border-color: #484848;
 }
 :root[data-theme="dark"] input:disabled {
-  background: #1b3244;
-  color: #96aebe;
+  background: #2e2e2e;
+  color: #aaaaaa;
 }
 :root[data-theme="dark"] input::placeholder,
 :root[data-theme="dark"] textarea::placeholder {
-  color: #7b97ab;
+  color: #929292;
 }
 :root[data-theme="dark"] .button {
-  background: #edaa70;
-  color: #112638;
+  background: #edd270;
+  color: #232323;
 }
 :root[data-theme="dark"] .button.secondary {
-  background: #1c374b;
-  color: #d8e6ef;
-  border-color: #385065;
+  background: #333333;
+  color: #e4e4e4;
+  border-color: #4c4c4c;
 }
 :root[data-theme="dark"] .icon-button {
-  color: #b1c7d7;
-  border-color: #385065;
+  color: #c3c3c3;
+  border-color: #4c4c4c;
 }
 :root[data-theme="dark"] .icon-button:hover {
-  background: #28465d;
+  background: #414141;
 }
 :root[data-theme="dark"] .hero,
 :root[data-theme="dark"] .cta,
 :root[data-theme="dark"] .public-page-heading {
-  background: #102638;
-  color: #f4f7fa;
+  background: #232323;
+  color: #f7f7f7;
 }
 :root[data-theme="dark"] .auth-visual h2,
 :root[data-theme="dark"] .cta h2,
@@ -201,26 +201,26 @@
 :root[data-theme="dark"] .demo-box,
 :root[data-theme="dark"] .quote-form-panel .stepper,
 :root[data-theme="dark"] .quick-note {
-  background: #122638;
+  background: #232323;
   border-color: var(--line);
 }
 :root[data-theme="dark"] .service-card {
   border-color: var(--line);
-  background: #132a3b;
+  background: #262626;
 }
 :root[data-theme="dark"] .service-icon {
   background: #47382f;
-  color: #edb17c;
+  color: #edd57c;
 }
 :root[data-theme="dark"] .service-card p,
 :root[data-theme="dark"] .capability-strip span,
 :root[data-theme="dark"] .check-list p,
 :root[data-theme="dark"] .check-list li {
-  color: #aabfce;
+  color: #bcbcbc;
 }
 :root[data-theme="dark"] .quote-table th,
 :root[data-theme="dark"] .quote-table tr:hover td {
-  background: #183245;
+  background: #2e2e2e;
 }
 :root[data-theme="dark"] .quote-table td,
 :root[data-theme="dark"] .quote-table td strong,
@@ -228,7 +228,7 @@
 :root[data-theme="dark"] .review dd,
 :root[data-theme="dark"] .detail-fields dd,
 :root[data-theme="dark"] .timeline strong {
-  color: #c7dbe9;
+  color: #d8d8d8;
 }
 :root[data-theme="dark"] .quote-table td,
 :root[data-theme="dark"] .quote-table th {
@@ -247,13 +247,13 @@
 :root[data-theme="dark"] .portal .table-footer,
 :root[data-theme="dark"] .portal .faq-panel details p,
 :root[data-theme="dark"] .auth-form > p {
-  color: #a9bdcc;
+  color: #bababa;
 }
 :root[data-theme="dark"] .portal .badge {
   filter: saturate(0.7);
-  background: #294459;
-  color: #c5e0f4;
-  border-color: #3b5c75;
+  background: #404040;
+  color: #dcdcdc;
+  border-color: #575757;
 }
 :root[data-theme="dark"] .portal .status-concluido,
 :root[data-theme="dark"] .portal .status-aprovado {
@@ -263,8 +263,8 @@
 }
 :root[data-theme="dark"] .portal .status-em-analise {
   background: #4b402d;
-  color: #f0cf98;
-  border-color: #63533c;
+  color: #f0dd98;
+  border-color: #635b3c;
 }
 :root[data-theme="dark"] .portal .status-cancelado {
   background: #4b3034;
@@ -273,25 +273,25 @@
 }
 :root[data-theme="dark"] .search,
 :root[data-theme="dark"] .quote-progress-panel {
-  background: #152c3e;
+  background: #282828;
   border-color: var(--line);
 }
 :root[data-theme="dark"] .quick-icon,
 :root[data-theme="dark"] .empty > span,
 :root[data-theme="dark"] .quote-progress li > span {
-  background: #244255;
-  color: #b3c8d8;
-  border-color: #3c5669;
+  background: #3d3d3d;
+  color: #c5c5c5;
+  border-color: #525252;
 }
 :root[data-theme="dark"] .workflow-stage:hover,
 :root[data-theme="dark"] .attention-strip.quiet {
-  background: #193345;
+  background: #2f2f2f;
 }
 :root[data-theme="dark"] .attention-strip,
 :root[data-theme="dark"] .draft-banner {
-  background: #263d43;
-  border-color: #3c555a;
-  color: #d4b48e;
+  background: #393939;
+  border-color: #505050;
+  color: #d4c58e;
 }
 :root[data-theme="dark"] .attention-strip p,
 :root[data-theme="dark"] .draft-banner small,
@@ -301,24 +301,24 @@
 :root[data-theme="dark"] .progress-explanation > span,
 :root[data-theme="dark"] .workflow-stage.has-items .workflow-stage-icon {
   background: #4b3c31;
-  color: #edb886;
+  color: #edd786;
 }
 :root[data-theme="dark"] .quote-progress > li.current > span {
-  background: #534130;
-  border-color: #ab7f59;
-  box-shadow: 0 0 0 4px #a7784210;
+  background: #534b30;
+  border-color: #ab9959;
+  box-shadow: 0 0 0 4px #a7914210;
 }
 :root[data-theme="dark"] .stepper strong {
-  background: #122638;
+  background: #232323;
 }
 :root[data-theme="dark"] .stepper > div > span {
-  background: #1d384c;
-  border-color: #3d5669;
+  background: #343434;
+  border-color: #525252;
 }
 :root[data-theme="dark"] .theme-options button.selected {
   background: #403c36;
-  border-color: #b4835f;
-  color: #efbf94;
+  border-color: #b4a25f;
+  color: #efdb94;
 }
 :root[data-theme="dark"] .message.neutral,
 :root[data-theme="dark"] .demo-banner {
@@ -337,16 +337,16 @@
   color: #a3dcc3;
 }
 :root[data-theme="dark"] .public-header nav.open {
-  background: #152c3e;
+  background: #282828;
 }
 :root[data-theme="dark"] .not-found,
 :root[data-theme="dark"] .legal {
-  color: #d9e8f2;
+  color: #e6e6e6;
 }
 :root[data-theme="dark"] .settings-panel h2,
 :root[data-theme="dark"] .panel h2,
 :root[data-theme="dark"] .panel h3 {
-  color: #dce8f2;
+  color: #e6e6e6;
 }
 @media (max-width: 760px) {
   .settings-panel {
@@ -379,7 +379,7 @@
   :root[data-theme="dark"] .panel,
   :root[data-theme="dark"] .portal-main {
     background: white !important;
-    color: #172e40 !important;
+    color: #2a2a2a !important;
   }
   .theme-toggle,
   .network-notice,

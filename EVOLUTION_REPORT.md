@@ -1,5 +1,17 @@
 # Evolução do SR Service — 23/10/2026
 
+## Redesign da identidade original
+
+A reformulação visual recupera `#F0C029`, `#FFCC00` e o grafite `#1A1A1A` dos estilos originais em `legacy/`, com superfícies neutras, amarelo controlado, temas coerentes e fotografia industrial preservada. O novo `src/design-system.css` centraliza cores, tipografia, espaçamentos, raios, sombras, foco e movimento. Detalhes e paleta completa em [DESIGN.md](DESIGN.md).
+
+Foram reformulados o shell do portal, sidebar recolhível com preferência local e tooltips acessíveis, cabeçalho com identificação da página, composição do dashboard, atalhos reais, indicadores, fluxo de atendimento, financeiro e gráfico, tabelas/cards móveis, filtros, formulários, modais, perfil, preferências, ajuda, histórico anterior, chat, páginas públicas e autenticação. Animações respeitam movimento reduzido. Não houve mudança em regras financeiras, autorização, modelos ou dados.
+
+Validações desta etapa: **24 testes unitários, 20 jornadas de interface e 9 jornadas Firebase aprovados**, além do build. Os três testes novos abrangem navegação compacta, teclado/menu móvel e vinte telas públicas/privadas em 360/768 px, com as telas do portal em ambos os temas. Capturas em 390/1440 px foram revisadas. Corrigidos transbordamentos das ações do cabeçalho em dispositivos móveis. O popup Google apresentou timeouts nas execuções concorrentes; passou isoladamente e na suíte completa sequencial. Os arquivos de testes Firebase agora usam um worker, mantendo sessões concorrentes dentro dos testes explícitos de corrida e sincronização. Nenhum fluxo de autenticação do produto foi alterado para acomodar os testes.
+
+O CSS principal passou de aproximadamente 67,2 kB / 14,1 kB gzip para 98,4 kB / 19,5 kB gzip. O JavaScript principal fica em aproximadamente 323,1 kB / 101,6 kB gzip. Não foram acrescentadas dependências de execução. Permanece o aviso conhecido do chunk de chat de 542 kB, carregado sob demanda. Essas medidas descrevem transferência do build, sem alegar melhoria medida de latência.
+
+A publicação do redesign usa somente Firebase Hosting. A validação pública reproduzível está em `node scripts/verify-release.mjs`; verifica o hash do build, páginas públicas, sidebar compacta após recarga e chat móvel em demonstração isolada, sem gravações em produção. A validação formal de acessibilidade, dispositivos/navegadores adicionais e login Google interativo real permanecem fora dessa cobertura.
+
 ## Diagnóstico e decisão de arquitetura
 
 A aplicação encontrada era um portal industrial de solicitações e propostas, com Authentication e Firestore, sem módulo financeiro. O diagnóstico anterior às mudanças está em `AUDIT.md`. A evolução foi aditiva: preserva as rotas, os pedidos, o histórico e os perfis; acrescenta um caixa privado por usuário. Propostas comerciais não viram receitas automaticamente.

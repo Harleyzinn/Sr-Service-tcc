@@ -3,6 +3,7 @@ const browser = await chromium.launch();
 const page = await browser.newPage({
   viewport: { width: 1440, height: 1000 },
   deviceScaleFactor: 1,
+  reducedMotion: "reduce",
 });
 await page.goto("http://127.0.0.1:5173/", { waitUntil: "networkidle" });
 await page.screenshot({ path: "artifacts/home-desktop.png", fullPage: true });
@@ -36,6 +37,23 @@ await page
   .waitFor();
 await page.screenshot({
   path: "artifacts/quote-detail-desktop.png",
+  fullPage: true,
+  animations: "disabled",
+});
+await page.getByRole("button", { name: "Sair da conta", exact: true }).click();
+await page
+  .getByRole("button", { name: "Visão da equipe", exact: true })
+  .click();
+await page.getByRole("heading", { name: /Olá, Rafael/ }).waitFor();
+await page.screenshot({
+  path: "artifacts/admin-dashboard-desktop.png",
+  fullPage: true,
+  animations: "disabled",
+});
+await page.goto("http://127.0.0.1:5173/app/clientes");
+await page.locator(".page-heading h1").waitFor();
+await page.screenshot({
+  path: "artifacts/admin-customers-desktop.png",
   fullPage: true,
   animations: "disabled",
 });

@@ -414,6 +414,13 @@ export function PublicLayout() {
 export function PortalLayout() {
   const { profile, user, demo, admin, logout, error } = useAuth();
   const [menu, setMenu] = useState(false);
+  const [compact, setCompact] = useState(() => {
+    try {
+      return localStorage.getItem("sr-sidebar-compact") === "true";
+    } catch {
+      return false;
+    }
+  });
   const [logoutError, setLogoutError] = useState("");
   const sidebarRef = useRef(null);
   const navigate = useNavigate();
@@ -485,8 +492,26 @@ export function PortalLayout() {
     .slice(0, 2)
     .map((n) => n[0])
     .join("");
+  const currentPage =
+    [
+      ...links,
+      ["/app/perfil", "", "Meu perfil"],
+      ["/app/configuracoes", "", "Preferências"],
+      ["/app/ajuda", "", "Central de ajuda"],
+    ].find(([path]) => path === location.pathname)?.[2] ||
+    "Detalhes do orçamento";
+  function toggleCompact() {
+    setCompact((value) => {
+      try {
+        localStorage.setItem("sr-sidebar-compact", String(!value));
+      } catch {
+        /* Layout remains usable without storage. */
+      }
+      return !value;
+    });
+  }
   return (
-    <div className="portal">
+    <div className={`portal ${compact ? "sidebar-compact" : ""}`}>
       <button
         className={`sidebar-scrim ${menu ? "visible" : ""}`}
         aria-label="Fechar menu"
@@ -506,7 +531,20 @@ export function PortalLayout() {
         >
           <Icon name="X" size={19} />
         </button>
-        <Brand light />
+        <div className="sidebar-brand-row">
+          <Brand light />
+          <button
+            className="sidebar-collapse"
+            onClick={toggleCompact}
+            aria-label={
+              compact ? "Expandir menu lateral" : "Recolher menu lateral"
+            }
+            aria-expanded={!compact}
+            title={compact ? "Expandir menu lateral" : "Recolher menu lateral"}
+          >
+            <Icon name="Menu" size={17} />
+          </button>
+        </div>
         <div className="workspace">
           <span className="workspace-icon">
             <Icon name={admin ? "ShieldCheck" : "Building2"} />
@@ -520,25 +558,47 @@ export function PortalLayout() {
         <span className="nav-label">PRINCIPAL</span>
         <nav aria-label="Menu do portal">
           {links.map(([to, icon, label]) => (
-            <NavLink key={to} to={to} end>
+            <NavLink
+              key={to}
+              to={to}
+              end
+              title={label}
+              aria-label={label}
+              data-tooltip={label}
+            >
               <Icon name={icon} />
-              {label}
+              <span className="nav-text">{label}</span>
             </NavLink>
           ))}
         </nav>
         <span className="nav-label">CONTA E SUPORTE</span>
         <nav aria-label="Conta e suporte">
-          <NavLink to="/app/perfil">
+          <NavLink
+            to="/app/perfil"
+            title="Meu perfil"
+            aria-label="Meu perfil"
+            data-tooltip="Meu perfil"
+          >
             <Icon name="UserRound" />
-            Meu perfil
+            <span className="nav-text">Meu perfil</span>
           </NavLink>
-          <NavLink to="/app/configuracoes">
+          <NavLink
+            to="/app/configuracoes"
+            title="Preferências"
+            aria-label="Preferências"
+            data-tooltip="Preferências"
+          >
             <Icon name="Settings2" />
-            Preferências
+            <span className="nav-text">Preferências</span>
           </NavLink>
-          <NavLink to="/app/ajuda">
+          <NavLink
+            to="/app/ajuda"
+            title="Central de ajuda"
+            aria-label="Central de ajuda"
+            data-tooltip="Central de ajuda"
+          >
             <Icon name="CircleHelp" />
-            Central de ajuda
+            <span className="nav-text">Central de ajuda</span>
           </NavLink>
         </nav>
         <div className="sidebar-help">
@@ -573,7 +633,7 @@ export function PortalLayout() {
             </button>
             <span>Portal {admin ? "administrativo" : "do cliente"}</span>
             <Icon name="ChevronRight" size={14} />
-            <strong>SR Service</strong>
+            <strong>{currentPage}</strong>
           </div>
           <div className="portal-header-right">
             <ThemeToggle />

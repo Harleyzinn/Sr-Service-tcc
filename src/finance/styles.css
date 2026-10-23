@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #60798c;
+  color: #757575;
   font-size: 11px;
   line-height: 1.7;
   margin: -9px 0 23px;
@@ -13,7 +13,7 @@
 .finance-import > p {
   line-height: 1.8;
   font-size: 13px;
-  color: #617c91;
+  color: #787878;
 }
 .finance-import > .text-link {
   margin: 5px 0 18px;
@@ -35,7 +35,7 @@
 }
 .import-format {
   margin: 18px 0;
-  color: #617c91;
+  color: #787878;
   font-size: 12px;
   line-height: 1.8;
 }
@@ -44,7 +44,7 @@
   padding: 5px 0;
 }
 :root[data-theme="dark"] .import-format {
-  color: #a6bece;
+  color: #bababa;
 }
 .import-preview {
   margin-top: 25px;
@@ -99,7 +99,7 @@
 .import-records small {
   display: block;
   margin-top: 6px;
-  color: #617c91;
+  color: #787878;
   font-size: 10px;
   line-height: 1.6;
   white-space: normal;
@@ -107,7 +107,7 @@
 :root[data-theme="dark"] .finance-sync,
 :root[data-theme="dark"] .finance-import > p,
 :root[data-theme="dark"] .import-records small {
-  color: #a6bece;
+  color: #bababa;
 }
 :root[data-theme="dark"] .import-counts strong {
   color: #9bcbb8;
@@ -116,9 +116,9 @@
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  border: 1px solid #dce8ef;
-  background: #edf4f8;
-  color: #577c94;
+  border: 1px solid #e6e6e6;
+  background: #f3f3f3;
+  color: #767676;
   padding: 13px 17px;
   border-radius: 8px;
   font-size: 11px;
@@ -144,12 +144,12 @@
   padding: 15px 16px;
   white-space: nowrap;
   border-bottom: 2px solid transparent;
-  color: #738a9b;
+  color: #868686;
 }
 .finance-tabs button.active {
-  color: #b97035;
+  color: #b99c35;
   border-color: var(--orange);
-  background: #ed893809;
+  background: #edc63809;
 }
 .finance-period {
   display: flex;
@@ -171,7 +171,7 @@
   align-items: center;
   gap: 12px;
   font-size: 11px;
-  color: #708797;
+  color: #838383;
 }
 .finance-period input {
   width: 170px;
@@ -193,7 +193,7 @@
   border-radius: 13px;
   width: 65px;
   height: 65px;
-  color: #ce853f;
+  color: #ceaf3f;
   flex-shrink: 0;
 }
 .finance-onboarding h2 {
@@ -217,7 +217,7 @@
 }
 .finance-stats .stat-card > span {
   font-size: 11px;
-  color: #72899a;
+  color: #858585;
 }
 .finance-stats .stat-card strong {
   font-size: 26px;
@@ -239,7 +239,7 @@
   display: flex;
   gap: 15px;
   font-size: 10px;
-  color: #8094a3;
+  color: #919191;
 }
 .chart-key > span {
   display: flex;
@@ -254,7 +254,7 @@
   background: #5c9a89;
 }
 .chart-key > span:last-child:before {
-  background: #e8a15f;
+  background: #e8ca5f;
 }
 .chart-bars {
   display: grid;
@@ -272,11 +272,11 @@
   padding: 8px;
   border-radius: 7px;
   font-size: 11px;
-  color: #8296a5;
+  color: #939393;
 }
 .chart-column.selected {
   background: #f4f7f9;
-  color: #406177;
+  color: #5c5c5c;
 }
 .bar-pair {
   display: flex;
@@ -292,7 +292,7 @@
   transition: height 0.2s;
 }
 .bar-pair > i:last-child {
-  background: #e9ad78;
+  background: #e9d178;
 }
 .chart-summary {
   display: flex;
@@ -301,7 +301,7 @@
   padding: 20px 27px;
   border-top: 1px solid var(--line);
   font-size: 12px;
-  color: #758e9f;
+  color: #8a8a8a;
 }
 .chart-summary strong {
   font-size: 21px;
@@ -319,7 +319,7 @@
   gap: 13px;
   padding: 19px 24px;
   border-bottom: 1px solid var(--line);
-  color: #a9814e;
+  color: #a9954e;
 }
 .finance-alert:last-child {
   border: 0;
@@ -335,20 +335,20 @@
   font-size: 11px;
   line-height: 1.7;
   margin: 5px 0 0;
-  color: #83939f;
+  color: #909090;
 }
 .finance-alert.danger {
   color: #b45f5f;
 }
 .finance-alert.info {
-  color: #5986a4;
+  color: #7f7f7f;
 }
 .finance-empty-inline {
   display: flex;
   align-items: center;
   gap: 15px;
   padding: 24px;
-  color: #8fa3b1;
+  color: #a0a0a0;
 }
 .finance-empty-inline p {
   font-size: 12px;
@@ -356,7 +356,7 @@
 }
 .finance-footer-note {
   font-size: 11px;
-  color: #8498a7;
+  color: #959595;
   line-height: 1.8;
   margin: 25px 0;
 }
@@ -392,7 +392,7 @@
   height: 37px;
   border-radius: 10px;
   background: #f9ede5;
-  color: #c28a5c;
+  color: #c2ac5c;
   flex-shrink: 0;
 }
 .entry-kind.income {
@@ -400,8 +400,8 @@
   color: #548c75;
 }
 .entry-kind.transfer {
-  background: #edf2fa;
-  color: #708db7;
+  background: #f2f2f2;
+  color: #8a8a8a;
 }
 .entry-description {
   flex: 1;
@@ -417,7 +417,7 @@
 .entry-description small {
   display: block;
   font-size: 10px;
-  color: #8a9fac;
+  color: #9b9b9b;
   line-height: 1.6;
   margin-top: 3px;
 }
@@ -482,23 +482,23 @@
 }
 .budget-row > div > span {
   font-size: 11px;
-  color: #7e94a4;
+  color: #909090;
 }
 .budget-row progress {
   width: 100%;
   height: 7px;
-  accent-color: #d99a64;
+  accent-color: #d9c064;
   background: #f1f4f6;
   border: 0;
   border-radius: 10px;
   overflow: hidden;
 }
 .budget-row progress::-webkit-progress-bar {
-  background: #eef2f5;
+  background: #f1f1f1;
   border-radius: 10px;
 }
 .budget-row progress::-webkit-progress-value {
-  background: #de9d68;
+  background: #dec468;
   border-radius: 10px;
 }
 .budget-row > .text-link {
@@ -506,7 +506,7 @@
   margin-top: 13px;
   justify-content: flex-end;
   font-size: 10px;
-  color: #aa7549;
+  color: #aa9549;
 }
 .account-grid {
   display: grid;
@@ -521,11 +521,11 @@
   padding: 23px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: linear-gradient(130deg, #fafcfd, #f3f7fa);
+  background: linear-gradient(130deg, #fafcfd, #f6f6f6);
   gap: 15px;
 }
 .account-card > svg {
-  color: #d39a6d;
+  color: #d3bd6d;
 }
 .account-card strong {
   font-size: 13px;
@@ -536,7 +536,7 @@
 }
 .account-card small {
   font-size: 10px;
-  color: #8ea1ae;
+  color: #9e9e9e;
 }
 .finance-account-actions {
   display: flex;
@@ -556,7 +556,7 @@
 }
 .finance-form .form-hint {
   font-size: 11px;
-  color: #8296a4;
+  color: #939393;
   line-height: 1.8;
 }
 .kind-switch {
@@ -576,8 +576,8 @@
 }
 .kind-switch > button.selected {
   background: #fff;
-  box-shadow: 0 2px 6px #1026380b;
-  color: #b8763f;
+  box-shadow: 0 2px 6px #2323230b;
+  color: #b89e3f;
   font-weight: 650;
 }
 .advanced-options {
@@ -587,7 +587,7 @@
 }
 .advanced-options summary {
   font-size: 12px;
-  color: #8a9eac;
+  color: #9b9b9b;
   cursor: pointer;
   margin-bottom: 20px;
 }
@@ -604,7 +604,7 @@
   font-size: 12px;
 }
 .finance-form .field b {
-  color: #d99a62;
+  color: #d9bf62;
 }
 @media (max-width: 1100px) {
   .finance-stats {
@@ -817,32 +817,32 @@
   }
 }
 :root[data-theme="dark"] .finance-privacy {
-  background: #173449;
-  border-color: #28465d;
-  color: #b1c6d7;
+  background: #2f2f2f;
+  border-color: #414141;
+  color: #c3c3c3;
 }
 :root[data-theme="dark"] .finance-stats .stat-card > span,
 :root[data-theme="dark"] .finance-period p {
-  color: #a6b9c9;
+  color: #b6b6b6;
 }
 :root[data-theme="dark"] .finance-tabs button {
-  color: #b1c3d1;
+  color: #c0c0c0;
 }
 :root[data-theme="dark"] .finance-tabs button.active {
-  color: #f0b27d;
+  color: #f0d77d;
 }
 :root[data-theme="dark"] .account-card {
-  background: linear-gradient(130deg, #1b3346, #152b3d);
+  background: linear-gradient(130deg, #2f2f2f, #282828);
 }
 :root[data-theme="dark"] .kind-switch {
-  background: #102537;
+  background: #222222;
 }
 :root[data-theme="dark"] .kind-switch > button.selected {
-  background: #294154;
-  color: #f3bc8b;
+  background: #3d3d3d;
+  color: #f3dc8b;
 }
 :root[data-theme="dark"] .chart-column.selected {
-  background: #243d51;
+  background: #393939;
 }
 :root[data-theme="dark"] .entry-kind {
   background: #43372e;
@@ -851,5 +851,5 @@
   background: #203e35;
 }
 :root[data-theme="dark"] .entry-kind.transfer {
-  background: #233b51;
+  background: #373737;
 }

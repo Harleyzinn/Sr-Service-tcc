@@ -241,13 +241,28 @@ export function Dashboard() {
             <Icon name="ArrowUpRight" size={18} />
           </Link>
         </div>
-        <div className="welcome-graphic" aria-hidden="true">
-          <div className="graphic-frame" />
-          <span className="graphic-hook" />
-          <span className="graphic-sr">
-            SR<span>↗</span>
-          </span>
-          <small>PRECISÃO EM CADA MOVIMENTO.</small>
+        <div className="welcome-graphic">
+          <div className="welcome-image" aria-hidden="true" />
+          <div className="welcome-shortcuts">
+            <span className="welcome-shortcuts-label">
+              SEU ESPAÇO DE TRABALHO
+            </span>
+            <Link to="/app/chat">
+              <Icon name="MessagesSquare" size={19} />
+              <span>
+                {admin ? "Central de conversas" : "Converse com a equipe"}
+                <small>Atendimento e histórico em um lugar</small>
+              </span>
+              <Icon name="ArrowUpRight" size={17} />
+            </Link>
+            <Link to="/app/financeiro">
+              <Icon name="Wallet" size={19} />
+              <span>
+                Meu financeiro<small>Organize suas próximas decisões</small>
+              </span>
+              <Icon name="ArrowUpRight" size={17} />
+            </Link>
+          </div>
         </div>
       </section>
       <div className="stats-grid">

@@ -760,9 +760,24 @@ export default function Finance() {
                     projected,
                     "Pendências registradas e recorrências deste mês até 30 dias à frente",
                   ],
-                ].map(([title, value, note]) => (
+                ].map(([title, value, note], index) => (
                   <div className="stat-card" key={title}>
-                    <span>{title}</span>
+                    <div className="finance-stat-label">
+                      <span>{title}</span>
+                      <span className="metric-icon">
+                        <Icon
+                          name={
+                            [
+                              "Wallet",
+                              "ArrowDownLeft",
+                              "ArrowUpRight",
+                              "TrendingUp",
+                            ][index]
+                          }
+                          size={18}
+                        />
+                      </span>
+                    </div>
                     <strong className={value < 0 ? "negative" : ""}>
                       {currency(value)}
                     </strong>

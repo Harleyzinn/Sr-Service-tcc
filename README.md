@@ -4,6 +4,8 @@ Site institucional, portal de atendimento e financeiro privado em React, Vite, *
 
 Aplicação publicada no Firebase Hosting: **https://srservice-2-0.web.app**. O projeto de produção está identificado em `.firebaserc`. A configuração Web usada no build fica em `.env.production.local`, ignorado pelo Git; novos ambientes precisam preencher os quatro identificadores públicos de `.env.example`.
 
+O redesign recupera a identidade original **grafite e amarelo industrial** e centraliza os componentes em `src/design-system.css`. Paleta, decisões visuais e verificação em [DESIGN.md](DESIGN.md).
+
 ## Executar localmente
 
 Requer Node.js 22.12+ (validado com Node 24) e npm.

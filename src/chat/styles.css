@@ -20,7 +20,7 @@
   margin: 0 0 6px;
 }
 .chat-inbox-heading span {
-  color: #627b8f;
+  color: #777777;
   font-size: 11px;
 }
 .chat-inbox-list {
@@ -36,7 +36,7 @@
 }
 .chat-inbox-list > button.selected {
   background: #fdf2e7;
-  box-shadow: inset 3px 0 #ed8938;
+  box-shadow: inset 3px 0 #edc638;
 }
 .chat-inbox-list > button:hover {
   background: #f5f7fa;
@@ -53,18 +53,18 @@
   overflow-wrap: anywhere;
 }
 .chat-inbox-list time {
-  color: #627b8f;
+  color: #777777;
   font-size: 10px;
 }
 .chat-inbox-list small {
   font-size: 10px;
-  color: #627b8f;
+  color: #777777;
   margin-top: 7px;
   display: block;
   overflow-wrap: anywhere;
 }
 .chat-inbox-list p {
-  color: #61788a;
+  color: #747474;
   font-size: 12px;
   line-height: 1.7;
   margin: 10px 0 0;
@@ -104,7 +104,7 @@
 .chat-thread-heading p {
   font-size: 11px;
   margin: 0;
-  color: #61788a;
+  color: #747474;
   line-height: 1.7;
 }
 .chat-avatar {
@@ -115,7 +115,7 @@
   height: 44px;
   flex-shrink: 0;
   background: #f9eadc;
-  color: #af6d37;
+  color: #af9537;
   border-radius: 13px;
 }
 .chat-connection {
@@ -147,7 +147,7 @@
 .chat-message {
   max-width: 85%;
   padding: 14px 17px;
-  border: 1px solid #e0e7ee;
+  border: 1px solid #e6e6e6;
   border-radius: 13px 13px 13px 3px;
   background: white;
   align-self: flex-start;
@@ -158,11 +158,11 @@
   align-self: flex-end;
   border-radius: 13px 13px 3px 13px;
   background: #fff1e4;
-  border-color: #f0d6be;
+  border-color: #f0e5be;
 }
 .chat-message strong {
   font-size: 10px;
-  color: #647d90;
+  color: #797979;
 }
 .chat-message p {
   font-size: 13px;
@@ -170,19 +170,19 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   margin: 7px 0 8px;
-  color: #18384e;
+  color: #333333;
 }
 .chat-message time {
   display: block;
   text-align: right;
-  color: #627b8f;
+  color: #777777;
   font-size: 9px;
 }
 .chat-empty {
   margin: auto;
   padding: 30px 22px;
   text-align: center;
-  color: #657e91;
+  color: #7a7a7a;
   line-height: 1.8;
   font-size: 12px;
 }
@@ -229,13 +229,13 @@
   margin-top: 10px;
 }
 .chat-composer > div > span {
-  color: #627b8f;
+  color: #777777;
   font-size: 10px;
   line-height: 1.7;
 }
 .chat-composer > small {
   display: block;
-  color: #627b8f;
+  color: #777777;
   font-size: 10px;
   line-height: 1.7;
   margin-top: 12px;
@@ -253,7 +253,7 @@
   text-align: center;
 }
 .chat-select > svg {
-  color: #c78a59;
+  color: #c7af59;
 }
 .chat-select h2 {
   font-size: 22px;
@@ -261,23 +261,23 @@
 }
 .chat-select p {
   font-size: 13px;
-  color: #627b8f;
+  color: #777777;
   max-width: 350px;
   line-height: 1.8;
 }
 :root[data-theme="dark"] .chat-log {
-  background: #102435;
+  background: #212121;
 }
 :root[data-theme="dark"] .chat-message {
-  background: #1c374a;
-  border-color: #345165;
+  background: #333333;
+  border-color: #4c4c4c;
 }
 :root[data-theme="dark"] .chat-message.mine {
   background: #3c382f;
-  border-color: #67513b;
+  border-color: #675d3b;
 }
 :root[data-theme="dark"] .chat-message p {
-  color: #e0eaf1;
+  color: #e8e8e8;
 }
 :root[data-theme="dark"] .chat-message strong,
 :root[data-theme="dark"] .chat-message time,
@@ -290,11 +290,11 @@
 :root[data-theme="dark"] .chat-composer > div > span,
 :root[data-theme="dark"] .chat-select p,
 :root[data-theme="dark"] .chat-empty {
-  color: #adc1d0;
+  color: #bebebe;
 }
 :root[data-theme="dark"] .chat-avatar {
   background: #473b31;
-  color: #ecb17e;
+  color: #ecd47e;
 }
 :root[data-theme="dark"] .chat-connection {
   background: #1b3836;
@@ -304,7 +304,7 @@
   background: #3c382f;
 }
 :root[data-theme="dark"] .chat-inbox-list > button:hover {
-  background: #203c50;
+  background: #373737;
 }
 @media (max-width: 1100px) {
   .chat-layout.with-inbox {

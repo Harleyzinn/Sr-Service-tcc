@@ -186,12 +186,12 @@ test("Google Authentication emulator completes the actual popup flow", async ({
   page,
 }) => {
   await page.goto("/login");
-  const popupEvent = page.waitForEvent("popup");
+  const popupEvent = page.waitForEvent("popup", { timeout: 15000 });
   await page.getByRole("button", { name: "Continuar com Google" }).click();
   const popup = await popupEvent;
   await popup
     .getByRole("button", { name: "Add new account", exact: true })
-    .click();
+    .click({ timeout: 15000 });
   await popup.locator("#email-input").fill(`google-${Date.now()}@example.com`);
   await popup.locator("#display-name-input").fill("Google Teste");
   await popup.getByRole("button", { name: /^Sign in with Google/ }).click();
