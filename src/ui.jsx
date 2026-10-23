@@ -470,6 +470,7 @@ export function PortalLayout() {
       : [["/app/clientes", "Building2", "Clientes"]]),
     ["/app/financeiro", "Wallet", "Meu financeiro"],
     ["/app/chat", "MessagesSquare", admin ? "Conversas" : "Chat com a equipe"],
+    ["/app/historico", "FileText", "Histórico anterior"],
   ];
   async function exit() {
     try {

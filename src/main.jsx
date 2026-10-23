@@ -36,6 +36,7 @@ const Customers = portalPage("Customers"),
   Quotes = portalPage("Quotes");
 const Finance = lazy(() => import("./finance/page"));
 const Chat = lazy(() => import("./chat/page"));
+const LegacyHistory = lazy(() => import("./legacy-history"));
 const Settings = lazy(() =>
   import("./preferences").then((m) => ({ default: m.Settings })),
 );
@@ -156,6 +157,7 @@ function App() {
                       <Route path="perfil" element={<Profile />} />
                       <Route path="financeiro" element={<Finance />} />
                       <Route path="chat" element={<Chat />} />
+                      <Route path="historico" element={<LegacyHistory />} />
                       <Route path="configuracoes" element={<Settings />} />
                       <Route path="ajuda" element={<Help />} />
                       <Route element={<Protected adminOnly />}>

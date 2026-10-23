@@ -38,12 +38,16 @@ export async function ensureProfile(user, fields = {}) {
       if (Object.keys(fields).length) transaction.update(ref, fields);
       return { ...snapshot.data(), ...fields, id: ref.id };
     }
+    const legacy = await transaction.get(
+      doc(db, "usuarios", user.id || user.uid),
+    );
+    const previous = legacy.exists() ? legacy.data() : {};
     const profile = {
-      full_name: user.displayName || "",
+      full_name: previous.NOME_USU || user.displayName || "",
       company: "",
-      phone: "",
-      document: "",
-      address: "",
+      phone: previous.TEL_USU || "",
+      document: previous.CPF_CNPJ_USU || "",
+      address: previous.END_USU || "",
       ...fields,
       email: user.email,
       created_at: serverTimestamp(),

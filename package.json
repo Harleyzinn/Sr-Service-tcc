@@ -9,7 +9,7 @@
     "preview": "vite preview --host 127.0.0.1",
     "test": "node --test tests/*.test.js",
     "test:e2e": "playwright test",
-    "test:rules": "firebase emulators:exec --only firestore --project demo-sr-service \"node --test --test-concurrency=1 tests/firestore.rules.test.mjs tests/chat.rules.test.mjs\"",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-sr-service \"node --test --test-concurrency=1 tests/firestore.rules.test.mjs tests/chat.rules.test.mjs tests/legacy.rules.test.mjs\"",
     "test:firebase": "firebase emulators:exec --only auth,firestore --project demo-sr-service \"playwright test --config playwright.firebase.config.js\""
   },
   "dependencies": {

@@ -2,6 +2,8 @@
 
 Site institucional, portal de atendimento e financeiro privado em React, Vite, **Firebase Authentication e Cloud Firestore**. Interface responsiva em português para clientes e equipe administrativa, com temas claro, escuro e automático.
 
+Aplicação publicada no Firebase Hosting: **https://srservice-2-0.web.app**. O projeto de produção está identificado em `.firebaserc`. A configuração Web usada no build fica em `.env.production.local`, ignorado pelo Git; novos ambientes precisam preencher os quatro identificadores públicos de `.env.example`.
+
 ## Executar localmente
 
 Requer Node.js 22.12+ (validado com Node 24) e npm.
@@ -34,6 +36,7 @@ Para reiniciar os registros fictícios, remova a chave `sr-service-demo-v2` do l
 | `/app/financeiro`                      | Caixa privado, agenda, contas, recorrências e planejamento |
 | `/app/configuracoes`                   | Tema e widgets financeiros persistentes                    |
 | `/app/chat`                            | Conversa cliente/equipe e caixa de atendimentos do admin   |
+| `/app/historico`                       | Orçamentos originais da versão anterior, com status editável pela equipe |
 
 URLs `.html` antigas redirecionam para as equivalentes. O diretório `legacy/` preserva o original para referência e não faz parte do build.
 
@@ -179,7 +182,9 @@ npx firebase deploy --only hosting --project ID_DO_PROJETO
 
 O build contém apenas a aplicação nova, imagens e fontes locais. O envio de orçamento grava no Firestore; não inclui notificações automáticas por e-mail ou WhatsApp. Revise os contatos comerciais antes de publicar; o e-mail foi preservado do original e sua disponibilidade não foi confirmada.
 
-Contas e pedidos do sistema anterior não são importados automaticamente. O novo aplicativo não usa o cliente, as variáveis, a migração SQL ou as dependências do banco anterior. O material original permanece apenas em `legacy/`.
+O projeto Firebase existente contém `usuarios`, `documentos` e `orcamentos`. As regras dessas coleções foram preservadas com funções prefixadas e permitem também administradores verificados com custom claim. Os pedidos originais podem ser consultados em **Histórico anterior**, com atualização de status pela equipe e bloqueio de alteração dos demais campos. No primeiro acesso, um perfil novo pode aproveitar os campos do cadastro original, sem alterar `usuarios`. As contas do Firebase Authentication continuam sendo as mesmas; e-mails ainda não verificados precisam da confirmação antes de acessar o portal. Não há conversão destrutiva nem importação automática de SQL ou de bancos externos.
+
+Para atualizar esta instalação, configure `.env.production.local`, execute os testes e o build e use `npx firebase deploy --only hosting,firestore:rules --project srservice-2-0`. O índice composto de `quotes` deve estar em estado **READY** antes de liberar os pedidos aos clientes. Em projetos existentes, inventarie os índices e acrescente os necessários sem remover índices de outras aplicações; não publique um catálogo reduzido de índices indiscriminadamente. Os novos arquivos de assets têm cache imutável, e o documento da aplicação exige revalidação.
 
 ### Backup e recuperação operacional
 

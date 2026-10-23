@@ -202,5 +202,191 @@ service cloud.firestore {
       allow create, update: if own(uid) && preference(request.resource.data);
       allow delete: if false;
     }
+    // Compatibility with the existing production collections; originals remain intact.
+    function legacy_signedIn() {
+      return request.auth != null;
+    }
+
+    function legacy_isOwner(uid) {
+      return legacy_signedIn() && request.auth.uid == uid;
+    }
+
+    function legacy_isAdmin() {
+      return admin() || legacy_signedIn() && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid))
+        && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.admin == true;
+    }
+
+    function legacy_authEmail() {
+      return request.auth.token.email;
+    }
+
+    function legacy_isValidDocumentId(documentId) {
+      return documentId is string && documentId.matches('^([0-9]{11}|[0-9]{14})$');
+    }
+
+    function legacy_isValidEmail(value) {
+      return value is string && value.size() <= 254 && value.matches('^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$');
+    }
+
+    function legacy_isValidProfileFor(uid) {
+      return request.resource.data.keys().hasOnly([
+          'uid',
+          'NOME_USU',
+          'EMAIL_USU',
+          'END_USU',
+          'CPF_CNPJ_USU',
+          'DOCUMENTO_ID',
+          'TEL_USU',
+          'admin',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.uid == uid
+        && request.resource.data.NOME_USU is string
+        && request.resource.data.NOME_USU.size() >= 5
+        && request.resource.data.NOME_USU.size() <= 120
+        && legacy_isValidEmail(request.resource.data.EMAIL_USU)
+        && request.resource.data.EMAIL_USU == legacy_authEmail()
+        && request.resource.data.END_USU is string
+        && request.resource.data.END_USU.size() >= 5
+        && request.resource.data.END_USU.size() <= 240
+        && request.resource.data.CPF_CNPJ_USU is string
+        && request.resource.data.CPF_CNPJ_USU.size() <= 18
+        && legacy_isValidDocumentId(request.resource.data.DOCUMENTO_ID)
+        && request.resource.data.TEL_USU is string
+        && request.resource.data.TEL_USU.matches('^[0-9]{10,11}$')
+        && request.resource.data.admin is bool
+        && getAfter(/databases/$(database)/documents/documentos/$(request.resource.data.DOCUMENTO_ID)).data.uid == uid;
+    }
+
+    function legacy_createdNow() {
+      return request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function legacy_validProfileUpdate(uid) {
+      return legacy_isValidProfileFor(uid)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.EMAIL_USU == resource.data.EMAIL_USU
+        && request.resource.data.admin == resource.data.admin
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function legacy_validDocumentLockKeys() {
+      return request.resource.data.keys().hasOnly(['uid', 'email', 'createdAt', 'updatedAt']);
+    }
+
+    function legacy_profileAfterUsesDocument(documentoId) {
+      return getAfter(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.uid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.DOCUMENTO_ID == documentoId;
+    }
+
+    function legacy_validDocumentLockCreate(documentoId) {
+      return legacy_validDocumentLockKeys()
+        && legacy_isValidDocumentId(documentoId)
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == legacy_authEmail()
+        && legacy_profileAfterUsesDocument(documentoId)
+        && (!('createdAt' in request.resource.data) || request.resource.data.createdAt == request.time)
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt == request.time);
+    }
+
+    function legacy_validDocumentLockUpdate(documentoId) {
+      return legacy_validDocumentLockKeys()
+        && legacy_isValidDocumentId(documentoId)
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == legacy_authEmail()
+        && legacy_profileAfterUsesDocument(documentoId)
+        && (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt)
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt == request.time);
+    }
+
+    function legacy_validDocumentLockDelete(documentoId) {
+      return legacy_isValidDocumentId(documentoId)
+        && resource.data.uid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.uid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.DOCUMENTO_ID != documentoId;
+    }
+
+    function legacy_isValidStatus(status) {
+      return status in ['Não Visualizado', 'Pendente', 'Em Análise', 'Aprovado', 'Concluído', 'Recusado', 'Cancelado'];
+    }
+
+    function legacy_validBudgetCreate() {
+      return request.resource.data.keys().hasOnly([
+          'NOME_EMPRESA',
+          'NOME_CONTATO',
+          'EMAIL_CONTATO',
+          'TELEFONE_CONTATO',
+          'TIPO_SERVICO',
+          'DESCRICAO',
+          'STATUS_ORCAMENTO',
+          'userUid',
+          'fk_cod_usuario',
+          'COD_ORCAMENTO',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.userUid == request.auth.uid
+        && request.resource.data.fk_cod_usuario == request.auth.uid
+        && request.resource.data.STATUS_ORCAMENTO == 'Não Visualizado'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.COD_ORCAMENTO is string
+        && request.resource.data.COD_ORCAMENTO.matches('^[0-9]{6,12}$')
+        && request.resource.data.NOME_CONTATO is string
+        && request.resource.data.NOME_CONTATO.size() >= 5
+        && request.resource.data.NOME_CONTATO.size() <= 120
+        && request.resource.data.NOME_EMPRESA is string
+        && request.resource.data.NOME_EMPRESA.size() <= 160
+        && legacy_isValidEmail(request.resource.data.EMAIL_CONTATO)
+        && request.resource.data.TELEFONE_CONTATO is string
+        && request.resource.data.TELEFONE_CONTATO.size() >= 10
+        && request.resource.data.TELEFONE_CONTATO.size() <= 18
+        && request.resource.data.TIPO_SERVICO is string
+        && request.resource.data.TIPO_SERVICO.size() >= 3
+        && request.resource.data.TIPO_SERVICO.size() <= 80
+        && request.resource.data.DESCRICAO is string
+        && request.resource.data.DESCRICAO.size() >= 20
+        && request.resource.data.DESCRICAO.size() <= 3000
+        && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid));
+    }
+
+    function legacy_validBudgetStatusUpdate() {
+      return request.resource.data.diff(resource.data).changedKeys().hasOnly(['STATUS_ORCAMENTO', 'updatedAt'])
+        && legacy_isValidStatus(request.resource.data.STATUS_ORCAMENTO)
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    match /usuarios/{uid} {
+      allow read: if legacy_isOwner(uid) || legacy_isAdmin();
+      allow create: if legacy_isOwner(uid)
+        && request.resource.data.admin == false
+        && legacy_createdNow()
+        && legacy_isValidProfileFor(uid);
+      allow update: if legacy_isOwner(uid) && legacy_validProfileUpdate(uid);
+      allow delete: if false;
+    }
+
+    match /documentos/{documentoId} {
+      allow get: if legacy_isAdmin() || (legacy_signedIn() && resource.data.uid == request.auth.uid);
+      allow list: if false;
+      allow create: if legacy_signedIn()
+        && !exists(/databases/$(database)/documents/documentos/$(documentoId))
+        && legacy_validDocumentLockCreate(documentoId);
+      allow update: if legacy_signedIn() && legacy_validDocumentLockUpdate(documentoId);
+      allow delete: if legacy_signedIn() && legacy_validDocumentLockDelete(documentoId);
+    }
+
+    match /orcamentos/{orcamentoId} {
+      allow create: if legacy_signedIn() && legacy_validBudgetCreate();
+      allow read: if legacy_isAdmin()
+        || (legacy_signedIn() && resource.data.userUid == request.auth.uid);
+      allow update: if legacy_isAdmin() && legacy_validBudgetStatusUpdate();
+      allow delete: if false;
+    }
+
   }
 }
