@@ -34,6 +34,17 @@ Para reiniciar os registros fictícios, remova a chave `sr-service-demo-v2` do l
 
 URLs `.html` antigas redirecionam para as equivalentes. O diretório `legacy/` preserva o original para referência e não faz parte do build.
 
+## Melhorias no atendimento
+
+- O painel destaca pedidos por etapa e propostas disponíveis, com atalhos para os resultados correspondentes.
+- Orçamentos aparecem em cards no celular, com equipamento, status, data e acesso aos detalhes sem rolagem horizontal.
+- A lista combina busca, status e serviço, permite ordenar por data, atualização ou valor e exporta todos os resultados filtrados em CSV. A exportação preserva acentos e protege campos de texto contra interpretação como fórmulas de planilha.
+- O formulário salva um rascunho no `sessionStorage`, separado por conta, projeto e ambiente de demonstração. O rascunho tem validade de 24 horas nesta aba e é removido ao enviar, descartar ou sair da conta. A recuperação retorna no máximo à segunda etapa: a revisão e o consentimento devem ser confirmados novamente.
+- Os detalhes explicam o próximo passo e mostram a progressão do atendimento. A leitura no Firestore consulta diretamente o documento autorizado, sem carregar todos os pedidos.
+- O menu móvel oferece fechamento por Escape e controle do foco. A troca de etapas direciona o foco para o título; campos de senha avisam quando Caps Lock está ativado. A busca de serviços aceita termos sem acentos.
+
+O rascunho local não é um pedido enviado. Ele não é sincronizado entre dispositivos ou abas e pode ficar indisponível se o armazenamento do navegador estiver bloqueado.
+
 ## Configurar o Firebase real
 
 Sem as variáveis, o acesso real mostra uma mensagem de configuração; a demonstração continua disponível. Nenhum projeto de produção foi provisionado ou alterado automaticamente.

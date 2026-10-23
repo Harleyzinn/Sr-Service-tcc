@@ -1,4 +1,11 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  useId,
+} from "react";
 import {
   Link,
   NavLink,
@@ -43,6 +50,7 @@ import {
   MapPin,
   LockKeyhole,
   TrendingUp,
+  RefreshCw,
 } from "lucide-react";
 import { useAuth } from "./auth";
 import { friendly } from "./api";
@@ -83,6 +91,7 @@ export const icons = {
   MapPin,
   LockKeyhole,
   TrendingUp,
+  RefreshCw,
 };
 export const Icon = ({ name, size = 20, ...props }) => {
   const Component = icons[name] || FileText;
@@ -117,6 +126,7 @@ export const Eyebrow = ({ children }) => (
 );
 export function Field({ label, name, type = "text", error, ...props }) {
   const [visible, setVisible] = useState(false);
+  const [capsLock, setCapsLock] = useState(false);
   const id = props.id || name;
   return (
     <label className={`field ${props.className || ""}`} htmlFor={id}>
@@ -134,6 +144,15 @@ export function Field({ label, name, type = "text", error, ...props }) {
           type={type === "password" && visible ? "text" : type}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${id}-error` : undefined}
+          onKeyUp={(event) => {
+            if (type === "password")
+              setCapsLock(event.getModifierState("CapsLock"));
+            props.onKeyUp?.(event);
+          }}
+          onBlur={(event) => {
+            setCapsLock(false);
+            props.onBlur?.(event);
+          }}
         />
         {type === "password" && (
           <button
@@ -146,6 +165,11 @@ export function Field({ label, name, type = "text", error, ...props }) {
           </button>
         )}
       </div>
+      {capsLock && (
+        <small className="caps-lock" role="status">
+          Caps Lock está ativado.
+        </small>
+      )}
       {error && (
         <small id={`${id}-error`} className="error-text">
           {error}
@@ -223,7 +247,20 @@ export function ToastProvider({ children }) {
   );
 }
 export function ScrollTop() {
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    if (!hash) return;
+    const frame = requestAnimationFrame(() => {
+      try {
+        document
+          .getElementById(decodeURIComponent(hash.slice(1)))
+          ?.scrollIntoView({ block: "start" });
+      } catch {
+        /* ignore malformed URL fragments */
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [pathname, hash]);
   useEffect(() => {
     window.scrollTo(0, 0);
     const titles = {
@@ -344,9 +381,49 @@ export function PortalLayout() {
   const { profile, user, demo, admin, logout, error } = useAuth();
   const [menu, setMenu] = useState(false);
   const [logoutError, setLogoutError] = useState("");
+  const sidebarRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
   useEffect(() => setMenu(false), [location.pathname]);
+  useEffect(() => {
+    if (!menu) return;
+    const previous = document.activeElement;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const targets = () => [
+      ...sidebarRef.current.querySelectorAll("a,button:not([disabled])"),
+    ];
+    targets()[0]?.focus();
+    const closeOnWide = () => {
+      if (window.innerWidth > 760) setMenu(false);
+    };
+    const keyboard = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setMenu(false);
+      }
+      if (e.key === "Tab") {
+        const list = targets();
+        const first = list[0];
+        const last = list.at(-1);
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", keyboard);
+    window.addEventListener("resize", closeOnWide);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.removeEventListener("keydown", keyboard);
+      window.removeEventListener("resize", closeOnWide);
+      previous?.focus();
+    };
+  }, [menu]);
   const links = [
     ["/app", "LayoutDashboard", "Visão geral"],
     [
@@ -378,7 +455,20 @@ export function PortalLayout() {
         aria-label="Fechar menu"
         onClick={() => setMenu(false)}
       />
-      <aside className={`sidebar ${menu ? "open" : ""}`}>
+      <aside
+        ref={sidebarRef}
+        className={`sidebar ${menu ? "open" : ""}`}
+        role={menu ? "dialog" : undefined}
+        aria-modal={menu ? true : undefined}
+        aria-label="Navegação do portal"
+      >
+        <button
+          className="mobile-sidebar-close"
+          aria-label="Fechar menu do portal"
+          onClick={() => setMenu(false)}
+        >
+          <Icon name="X" size={19} />
+        </button>
         <Brand light />
         <div className="workspace">
           <span className="workspace-icon">
@@ -514,6 +604,7 @@ export function Empty({
 }
 export function Modal({ title, children, onClose }) {
   const ref = useRef(null);
+  const titleId = useId();
   useEffect(() => {
     const previous = document.activeElement;
     ref.current.showModal();
@@ -523,13 +614,14 @@ export function Modal({ title, children, onClose }) {
     <dialog
       ref={ref}
       className="modal"
+      aria-labelledby={titleId}
       onCancel={onClose}
       onClick={(e) => {
         if (e.target === ref.current) onClose();
       }}
     >
       <div className="modal-heading">
-        <h2>{title}</h2>
+        <h2 id={titleId}>{title}</h2>
         <button
           className="icon-button"
           aria-label="Fechar detalhes"

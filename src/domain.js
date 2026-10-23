@@ -117,12 +117,19 @@ export function validateProfile(p) {
   if (p.document && !validDocument(p.document))
     throw new Error("Informe um CPF ou CNPJ válido.");
 }
-export function validateQuote(q) {
+export function validateTechnical(q) {
   if (!services.some((s) => s.title === q.service))
     throw new Error("Selecione o serviço.");
   if (!q.equipment?.trim()) throw new Error("Informe o equipamento.");
-  if (q.description?.trim().length < 20)
+  if ((q.description?.trim().length || 0) < 20)
     throw new Error("Descreva a necessidade em pelo menos 20 caracteres.");
+  if (q.equipment.length > 200 || q.description.length > 5000)
+    throw new Error(
+      "Confira os limites de tamanho do equipamento e da descrição.",
+    );
+}
+export function validateQuote(q) {
+  validateTechnical(q);
   if (!q.company?.trim() || !q.contact_name?.trim())
     throw new Error("Preencha empresa e nome do contato.");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q.email || ""))
@@ -130,7 +137,110 @@ export function validateQuote(q) {
   if (digits(q.phone).length < 10 || digits(q.phone).length > 11)
     throw new Error("Informe um telefone com DDD válido.");
   if (!q.address?.trim()) throw new Error("Informe o endereço do atendimento.");
+  for (const [key, max] of Object.entries({
+    equipment: 200,
+    description: 5000,
+    company: 160,
+    contact_name: 120,
+    email: 254,
+    phone: 20,
+    address: 500,
+  })) {
+    if (q[key].length > max)
+      throw new Error(`Um dos campos excedeu o limite de ${max} caracteres.`);
+  }
 }
+export const searchText = (value) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+export function sortQuotes(quotes, order = "recentes") {
+  const byDate = (q) => new Date(q.created_at).getTime() || 0;
+  return [...quotes].sort((a, b) =>
+    order === "antigos"
+      ? byDate(a) - byDate(b)
+      : order === "atualizados"
+        ? new Date(b.updated_at || b.created_at) -
+          new Date(a.updated_at || a.created_at)
+        : order === "valor"
+          ? (b.amount ?? -1) - (a.amount ?? -1) || byDate(b) - byDate(a)
+          : byDate(b) - byDate(a),
+  );
+}
+export function quotesCsv(quotes) {
+  const cell = (value) => {
+    let text = String(value ?? "");
+    // Prevent spreadsheet formula execution in user-provided cells.
+    if (/^[\s\u0000-\u001f]*[=+@-]/.test(text)) text = "'" + text;
+    return '"' + text.replaceAll('"', '""') + '"';
+  };
+  return (
+    "\uFEFF" +
+    [
+      [
+        "Referência",
+        "Serviço",
+        "Equipamento",
+        "Empresa",
+        "Contato",
+        "Data",
+        "Status",
+        "Valor (R$)",
+      ],
+      ...quotes.map((q) => [
+        reference(q),
+        q.service,
+        q.equipment,
+        q.company,
+        q.contact_name,
+        date(q.created_at),
+        q.status,
+        q.amount == null ? "" : Number(q.amount).toFixed(2).replace(".", ","),
+      ]),
+    ]
+      .map((row) => row.map(cell).join(";"))
+      .join("\r\n")
+  );
+}
+export const statusGuidance = {
+  Recebido: {
+    title: "Solicitação registrada",
+    text: "Sua solicitação foi recebida. A equipe vai avaliar as informações para iniciar o atendimento.",
+    icon: "Files",
+  },
+  "Em análise": {
+    title: "Estamos avaliando sua necessidade",
+    text: "A equipe está analisando o equipamento e o serviço. Se precisar complementar as informações, entre em contato.",
+    icon: "Search",
+  },
+  "Proposta enviada": {
+    title: "Sua proposta está disponível",
+    text: "Confira o valor e as condições abaixo. Para esclarecer dúvidas ou confirmar o interesse, converse com a equipe.",
+    icon: "FileText",
+  },
+  Aprovado: {
+    title: "Próximos passos em preparação",
+    text: "A aprovação foi registrada pela equipe. Combine os detalhes e a programação do atendimento pelo canal de contato.",
+    icon: "CheckCircle2",
+  },
+  "Em execução": {
+    title: "Atendimento em andamento",
+    text: "A execução foi iniciada. Consulte o histórico e as observações para acompanhar o atendimento.",
+    icon: "Wrench",
+  },
+  Concluído: {
+    title: "Atendimento concluído",
+    text: "Este atendimento foi finalizado. Os detalhes e o histórico permanecem disponíveis para consulta.",
+    icon: "ShieldCheck",
+  },
+  Cancelado: {
+    title: "Solicitação encerrada",
+    text: "Este pedido foi cancelado. Se precisar retomar o atendimento, converse com a equipe ou envie uma nova solicitação.",
+    icon: "CircleHelp",
+  },
+};
 export const date = (value) =>
   value
     ? new Intl.DateTimeFormat("pt-BR", {

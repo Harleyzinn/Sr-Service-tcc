@@ -17,4 +17,26 @@ await page.screenshot({
   fullPage: true,
   animations: "disabled",
 });
+await page.goto("http://127.0.0.1:5173/app/orcamentos");
+await page.locator(".quote-mobile-card").first().waitFor();
+await page.screenshot({
+  path: "artifacts/quotes-mobile.png",
+  fullPage: true,
+  animations: "disabled",
+});
+await page.setViewportSize({ width: 1440, height: 1000 });
+await page.screenshot({
+  path: "artifacts/quotes-desktop.png",
+  fullPage: true,
+  animations: "disabled",
+});
+await page.getByRole("link", { name: "SR-1047", exact: true }).click();
+await page
+  .getByRole("heading", { name: "Orçamento SR-1047", exact: true })
+  .waitFor();
+await page.screenshot({
+  path: "artifacts/quote-detail-desktop.png",
+  fullPage: true,
+  animations: "disabled",
+});
 await browser.close();

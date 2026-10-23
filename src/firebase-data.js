@@ -2,6 +2,7 @@ import {
   collection,
   doc,
   getDocs,
+  getDoc,
   query,
   where,
   orderBy,
@@ -58,6 +59,10 @@ export async function listQuotes(user, admin) {
     ),
   );
   return snapshot.docs.map(normalizeQuote);
+}
+export async function getQuote(id) {
+  const snapshot = await getDoc(doc(db, "quotes", id));
+  return snapshot.exists() ? normalizeQuote(snapshot) : null;
 }
 export async function createQuote(user, payload) {
   const ref = doc(collection(db, "quotes"));

@@ -2,6 +2,7 @@ import { validateQuote, validateProfile } from "./domain";
 import {
   ensureProfile,
   listQuotes,
+  getQuote,
   createQuote,
   updateQuote,
 } from "./firebase-data";
@@ -145,6 +146,15 @@ export function friendly(error) {
   );
 }
 export const api = {
+  async quote(user, demo, admin, id) {
+    if (demo)
+      return (
+        readDemo().quotes.find(
+          (q) => q.id === id && (admin || q.user_id === user.id),
+        ) || null
+      );
+    return getQuote(id);
+  },
   async profile(user, demo) {
     if (demo)
       return { ...demoProfile(demo), ...(readDemo().profiles[user.id] || {}) };

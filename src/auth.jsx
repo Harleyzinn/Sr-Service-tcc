@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { onIdTokenChanged, signOut } from "firebase/auth";
 import { api, demoProfile, friendly } from "./api";
 import { configured, authClient } from "./firebase";
+import { clearUserDrafts } from "./draft";
 const Context = createContext(null);
 export function AuthProvider({ children }) {
   const [demo, setDemo] = useState(
@@ -99,6 +100,7 @@ export function AuthProvider({ children }) {
   };
   const logout = async () => {
     if (!demo && authClient) await signOut(authClient);
+    if (user) clearUserDrafts(user.id, demo);
     sessionStorage.removeItem("sr-demo-role");
     setDemo(null);
     setUser(null);

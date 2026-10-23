@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import {
   Link,
   useNavigate,
@@ -7,9 +7,13 @@ import {
 } from "react-router-dom";
 import { useAuth } from "./auth";
 import { api, friendly } from "./api";
+import { Workflow, QuoteProgress } from "./workflow";
+import { draftKey, readDraft, saveDraft, clearDraft } from "./draft";
 import { changePassword } from "./firebase-auth";
 import {
   date,
+  sortQuotes,
+  quotesCsv,
   filterQuotes,
   money,
   reference,
@@ -17,6 +21,7 @@ import {
   statuses,
   validateProfile,
   validateQuote,
+  validateTechnical,
 } from "./domain";
 import {
   Badge,
@@ -26,6 +31,7 @@ import {
   Field,
   Icon,
   Loading,
+  Modal,
   PageHeading,
   SelectField,
   SuccessBox,
@@ -73,53 +79,106 @@ function Retry({ error, refresh }) {
     </div>
   ) : null;
 }
+function useQuote(id) {
+  const { user, demo, admin } = useAuth();
+  const [quote, setQuote] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [revision, setRevision] = useState(0);
+  const refresh = useCallback(() => setRevision((value) => value + 1), []);
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError("");
+    api
+      .quote(user, demo, admin, id)
+      .then((data) => {
+        if (active) setQuote(data);
+      })
+      .catch((e) => {
+        if (active) setError(friendly(e));
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [id, user.id, demo, admin, revision]);
+  return { quote, loading, error, refresh };
+}
 function QuoteTable({ quotes, admin }) {
   return (
-    <div className="table-scroll">
-      <table className="quote-table">
-        <thead>
-          <tr>
-            <th>ORÇAMENTO</th>
-            <th>{admin ? "CLIENTE / EMPRESA" : "EQUIPAMENTO"}</th>
-            <th>SOLICITADO EM</th>
-            <th>STATUS</th>
-            <th aria-label="Ações" />
-          </tr>
-        </thead>
-        <tbody>
-          {quotes.map((q) => (
-            <tr key={q.id}>
-              <td>
-                <Link
-                  to={`/app/orcamentos/${q.id}`}
-                  className="quote-reference"
-                >
-                  {reference(q)}
-                </Link>
-                <small>{q.service}</small>
-              </td>
-              <td>
-                <strong>{admin ? q.company : q.equipment}</strong>
-                <small>{admin ? q.contact_name : q.company}</small>
-              </td>
-              <td>{date(q.created_at)}</td>
-              <td>
-                <Badge status={q.status} />
-              </td>
-              <td>
-                <Link
-                  className="row-action"
-                  to={`/app/orcamentos/${q.id}`}
-                  aria-label={`Ver orçamento ${reference(q)}`}
-                >
-                  <Icon name="ArrowUpRight" size={18} />
-                </Link>
-              </td>
+    <>
+      <div className="table-scroll quote-desktop-table">
+        <table className="quote-table">
+          <thead>
+            <tr>
+              <th>ORÇAMENTO</th>
+              <th>{admin ? "CLIENTE / EMPRESA" : "EQUIPAMENTO"}</th>
+              <th>SOLICITADO EM</th>
+              <th>STATUS</th>
+              <th aria-label="Ações" />
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {quotes.map((q) => (
+              <tr key={q.id}>
+                <td>
+                  <Link
+                    to={`/app/orcamentos/${q.id}`}
+                    className="quote-reference"
+                  >
+                    {reference(q)}
+                  </Link>
+                  <small>{q.service}</small>
+                </td>
+                <td>
+                  <strong>{admin ? q.company : q.equipment}</strong>
+                  <small>{admin ? q.contact_name : q.company}</small>
+                </td>
+                <td>{date(q.created_at)}</td>
+                <td>
+                  <Badge status={q.status} />
+                </td>
+                <td>
+                  <Link
+                    className="row-action"
+                    to={`/app/orcamentos/${q.id}`}
+                    aria-label={`Ver orçamento ${reference(q)}`}
+                  >
+                    <Icon name="ArrowUpRight" size={18} />
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="quote-mobile-list">
+        {quotes.map((q) => (
+          <article className="quote-mobile-card" key={q.id}>
+            <div className="mobile-quote-top">
+              <Link className="quote-reference" to={"/app/orcamentos/" + q.id}>
+                {reference(q)}
+              </Link>
+              <Badge status={q.status} />
+            </div>
+            <h3>{admin ? q.company : q.equipment}</h3>
+            <p>{q.service}</p>
+            <div className="mobile-quote-meta">
+              <span>
+                <Icon name="Clock3" size={13} />
+                {date(q.created_at)}
+              </span>
+              <Link to={"/app/orcamentos/" + q.id}>
+                Ver detalhes <Icon name="ArrowUpRight" size={15} />
+              </Link>
+            </div>
+          </article>
+        ))}
+      </div>
+    </>
   );
 }
 export function Dashboard() {
@@ -220,6 +279,7 @@ export function Dashboard() {
           </div>
         ))}
       </div>
+      {!loading && !error && <Workflow quotes={quotes} admin={admin} />}
       <div className="dashboard-grid">
         <section className="panel recent">
           <div className="panel-heading">
@@ -292,19 +352,47 @@ export function Quotes() {
   const { admin } = useAuth();
   const { quotes, loading, error, refresh } = useQuotes();
   const [params, setParams] = useSearchParams();
+  const [page, setPage] = useState(1);
+  const toast = useToast();
   const search = params.get("busca") || "";
   const status = params.get("status") || "";
-  const filtered = filterQuotes(quotes, search, status);
-  const [page, setPage] = useState(1);
+  const service = params.get("servico") || "";
+  const order = ["recentes", "antigos", "atualizados", "valor"].includes(
+    params.get("ordem"),
+  )
+    ? params.get("ordem")
+    : "recentes";
   const perPage = 8;
+  const filtered = sortQuotes(
+    filterQuotes(quotes, search, status).filter(
+      (q) => !service || q.service === service,
+    ),
+    order,
+  );
+  const activeFilters = Boolean(search || status || service);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+  const currentPage = Math.min(page, totalPages);
   function filter(key, value) {
     const next = new URLSearchParams(params);
     value ? next.set(key, value) : next.delete(key);
     setParams(next, { replace: true });
     setPage(1);
   }
-  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
-  const currentPage = Math.min(page, totalPages);
+  function reset() {
+    setParams(order !== "recentes" ? { ordem: order } : {}, { replace: true });
+    setPage(1);
+  }
+  function download() {
+    const url = URL.createObjectURL(
+      new Blob([quotesCsv(filtered)], { type: "text/csv;charset=utf-8;" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "sr-service-orcamentos.csv";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast("Exportação concluída com os resultados filtrados.");
+  }
   return (
     <>
       <PageHeading
@@ -312,6 +400,14 @@ export function Quotes() {
         title={admin ? "Todos os orçamentos" : "Meus orçamentos"}
         description="Cada solicitação, cada etapa. Tudo em um só lugar."
       >
+        <button
+          className="button secondary refresh-button"
+          onClick={refresh}
+          disabled={loading}
+        >
+          <Icon name="RefreshCw" size={16} className={loading ? "spin" : ""} />
+          Atualizar
+        </button>
         {!admin && (
           <ButtonLink to="/app/novo-orcamento">
             <Icon name="Plus" size={18} />
@@ -321,32 +417,39 @@ export function Quotes() {
       </PageHeading>
       <section className="panel">
         <div className="list-toolbar">
-          <div className="filter-tabs">
+          <div className="list-toolbar-top">
+            <div className="filter-tabs">
+              {[
+                ["", "Todos"],
+                ["Em análise", "Em análise"],
+                ["Concluído", "Concluídos"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  className={status === value ? "active" : ""}
+                  aria-pressed={status === value}
+                  onClick={() => filter("status", value)}
+                >
+                  {label}
+                  {!value && <span>{quotes.length}</span>}
+                </button>
+              ))}
+            </div>
             <button
-              className={!status ? "active" : ""}
-              onClick={() => filter("status", "")}
+              className="text-link export-button"
+              onClick={download}
+              disabled={loading || Boolean(error) || !filtered.length}
             >
-              Todos <span>{quotes.length}</span>
-            </button>
-            <button
-              className={status === "Em análise" ? "active" : ""}
-              onClick={() => filter("status", "Em análise")}
-            >
-              Em análise
-            </button>
-            <button
-              className={status === "Concluído" ? "active" : ""}
-              onClick={() => filter("status", "Concluído")}
-            >
-              Concluídos
+              <Icon name="Download" size={15} />
+              Exportar CSV
             </button>
           </div>
-          <div className="list-filters">
+          <div className="list-filters enhanced-filters">
             <label className="search">
               <Icon name="Search" size={17} />
               <input
                 aria-label="Buscar orçamento"
-                placeholder="Buscar orçamento…"
+                placeholder="Referência, empresa ou equipamento…"
                 value={search}
                 onChange={(e) => filter("busca", e.target.value)}
               />
@@ -361,6 +464,43 @@ export function Quotes() {
                 <option key={s}>{s}</option>
               ))}
             </select>
+            <select
+              aria-label="Filtrar por serviço"
+              value={service}
+              onChange={(e) => filter("servico", e.target.value)}
+            >
+              <option value="">Todos os serviços</option>
+              {services.map((s) => (
+                <option key={s.id}>{s.title}</option>
+              ))}
+            </select>
+          </div>
+          <div className="results-toolbar">
+            <span aria-live="polite">
+              {loading
+                ? "Consultando solicitações…"
+                : filtered.length +
+                  " resultado" +
+                  (filtered.length !== 1 ? "s" : "")}
+              {activeFilters && (
+                <button className="clear-filters" onClick={reset}>
+                  Limpar filtros <Icon name="X" size={12} />
+                </button>
+              )}
+            </span>
+            <label>
+              Ordenar por{" "}
+              <select
+                aria-label="Ordenar orçamentos"
+                value={order}
+                onChange={(e) => filter("ordem", e.target.value)}
+              >
+                <option value="recentes">Mais recentes</option>
+                <option value="antigos">Mais antigos</option>
+                <option value="atualizados">Última atualização</option>
+                <option value="valor">Maior valor</option>
+              </select>
+            </label>
           </div>
         </div>
         {loading ? (
@@ -378,15 +518,16 @@ export function Quotes() {
             />
             <div className="table-footer">
               <span>
-                {filtered.length} orçamento{filtered.length !== 1 ? "s" : ""}{" "}
-                encontrado{filtered.length !== 1 ? "s" : ""}
+                Mostrando {(currentPage - 1) * perPage + 1}–
+                {Math.min(currentPage * perPage, filtered.length)} de{" "}
+                {filtered.length}
               </span>
               <div>
                 <button
                   className="icon-button"
                   aria-label="Página anterior"
                   disabled={currentPage === 1}
-                  onClick={() => setPage(page - 1)}
+                  onClick={() => setPage(currentPage - 1)}
                 >
                   <Icon name="ArrowLeft" size={16} />
                 </button>
@@ -397,7 +538,7 @@ export function Quotes() {
                   className="icon-button"
                   aria-label="Próxima página"
                   disabled={currentPage === totalPages}
-                  onClick={() => setPage(page + 1)}
+                  onClick={() => setPage(currentPage + 1)}
                 >
                   <Icon name="ArrowRight" size={16} />
                 </button>
@@ -407,23 +548,23 @@ export function Quotes() {
         ) : (
           <Empty
             title={
-              search || status
+              activeFilters
                 ? "Nenhum resultado encontrado"
                 : "Nenhum orçamento por aqui"
             }
             text={
-              search || status
-                ? "Ajuste a busca ou selecione outro status."
+              activeFilters
+                ? "Ajuste a busca ou remova os filtros para ver mais solicitações."
                 : undefined
             }
-            action={!admin && !search && !status}
+            action={!admin && !activeFilters}
           />
         )}
       </section>
       <div className="subtle-note">
-        <Icon name="ShieldCheck" size={16} />
-        Você pode consultar os detalhes de cada orçamento para acompanhar sua
-        evolução.
+        <Icon name="ShieldCheck" size={16} />A exportação inclui todos os
+        resultados filtrados. Consulte os detalhes para ver a proposta e o
+        histórico.
       </div>
     </>
   );
@@ -442,12 +583,19 @@ const initialQuote = {
 export function NewQuote() {
   const { user, profile, demo, admin } = useAuth();
   const [params] = useSearchParams();
-  const [step, setStep] = useState(1);
+  const key = draftKey(user.id, demo);
+  const [restored] = useState(() => readDraft(key));
+  const [step, setStep] = useState(restored?.step || 1);
+  const [draftSaved, setDraftSaved] = useState(false);
+  const [discard, setDiscard] = useState(false);
+  const submitted = useRef(false);
+  const formHeading = useRef(null);
+  const previousStep = useRef(step);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
-  const [form, setForm] = useState(() => ({
+  const freshForm = () => ({
     ...initialQuote,
     service: services.find((s) => s.id === params.get("servico"))?.title || "",
     company: profile?.company || "",
@@ -455,7 +603,34 @@ export function NewQuote() {
     email: profile?.email || user.email || "",
     phone: profile?.phone || "",
     address: profile?.address || "",
+  });
+  const [form, setForm] = useState(() => ({
+    ...freshForm(),
+    ...(restored?.form || {}),
   }));
+  const hasDraft = Boolean(form.service || form.equipment || form.description);
+  useEffect(() => {
+    if (admin || submitted.current) return;
+    if (hasDraft) setDraftSaved(saveDraft(key, form, step));
+    else {
+      clearDraft(key);
+      setDraftSaved(false);
+    }
+  }, [key, form, step, admin, hasDraft]);
+  useEffect(() => {
+    if (previousStep.current !== step) {
+      formHeading.current?.focus();
+      previousStep.current = step;
+    }
+  }, [step]);
+  function discardDraft() {
+    clearDraft(key);
+    setForm({ ...freshForm(), service: "" });
+    setStep(1);
+    setError("");
+    setDiscard(false);
+    toast("Rascunho descartado.");
+  }
   useEffect(() => {
     if (profile)
       setForm((f) => ({
@@ -472,13 +647,18 @@ export function NewQuote() {
   }, [profile]);
   function change(e) {
     const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: value }));
+    if (name in initialQuote) setForm((f) => ({ ...f, [name]: value }));
   }
   async function next(e) {
     e.preventDefault();
     setError("");
     if (step === 1) {
-      setStep(2);
+      try {
+        validateTechnical(form);
+        setStep(2);
+      } catch (error) {
+        setError(friendly(error));
+      }
       return;
     }
     try {
@@ -489,6 +669,8 @@ export function NewQuote() {
       }
       setBusy(true);
       const q = await api.createQuote(user, demo, form);
+      submitted.current = true;
+      clearDraft(key);
       toast("Solicitação enviada. Você já pode acompanhar o atendimento.");
       navigate(`/app/orcamentos/${q.id}`, { replace: true });
     } catch (e) {
@@ -516,6 +698,42 @@ export function NewQuote() {
         title="Solicitar orçamento"
         description="Conte o que sua operação precisa. Nossa equipe cuida dos próximos passos."
       />
+      <div className="draft-banner">
+        <span>
+          <Icon name={draftSaved ? "CheckCircle2" : "FileText"} size={16} />
+          {draftSaved
+            ? "Rascunho salvo nesta aba"
+            : "Seu pedido só será enviado ao confirmar"}
+          <small>
+            {restored ? "Retome de onde parou. " : ""}Válido por 24 horas nesta
+            aba. Apagado ao sair da conta.
+          </small>
+        </span>
+        {hasDraft && (
+          <button type="button" onClick={() => setDiscard(true)}>
+            Descartar rascunho <Icon name="X" size={14} />
+          </button>
+        )}
+      </div>
+      {discard && (
+        <Modal title="Descartar rascunho?" onClose={() => setDiscard(false)}>
+          <p>
+            Os dados desta solicitação serão removidos desta aba. Pedidos já
+            enviados permanecem no portal.
+          </p>
+          <div className="modal-actions">
+            <button
+              className="button secondary"
+              onClick={() => setDiscard(false)}
+            >
+              Continuar preenchendo
+            </button>
+            <button className="button" onClick={discardDraft}>
+              Descartar rascunho
+            </button>
+          </div>
+        </Modal>
+      )}
       <div className="form-layout">
         <section className="panel quote-form-panel">
           <div className="stepper">
@@ -537,13 +755,13 @@ export function NewQuote() {
               </div>
             ))}
           </div>
-          <form onSubmit={next} onChange={change}>
+          <form onSubmit={next}>
             <ErrorBox>{error}</ErrorBox>
             {step === 1 && (
               <>
                 <div className="form-section-title">
                   <span>01</span>
-                  <div>
+                  <div ref={formHeading} tabIndex={-1} className="step-heading">
                     <h2>Como podemos ajudar?</h2>
                     <p>Selecione a solução e descreva seu equipamento.</p>
                   </div>
@@ -603,7 +821,7 @@ export function NewQuote() {
               <>
                 <div className="form-section-title">
                   <span>02</span>
-                  <div>
+                  <div ref={formHeading} tabIndex={-1} className="step-heading">
                     <h2>Onde será o atendimento?</h2>
                     <p>Precisamos saber com quem conversar e onde atuar.</p>
                   </div>
@@ -664,7 +882,7 @@ export function NewQuote() {
               <>
                 <div className="form-section-title">
                   <span>03</span>
-                  <div>
+                  <div ref={formHeading} tabIndex={-1} className="step-heading">
                     <h2>Está tudo certo?</h2>
                     <p>Confira os dados antes de enviar sua solicitação.</p>
                   </div>
@@ -767,8 +985,7 @@ export function NewQuote() {
 export function QuoteDetail() {
   const { id } = useParams();
   const { demo, admin } = useAuth();
-  const { quotes, loading, error, refresh } = useQuotes();
-  const quote = quotes.find((q) => q.id === id);
+  const { quote, loading, error, refresh } = useQuote(id);
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -826,6 +1043,7 @@ export function QuoteDetail() {
           Imprimir / PDF
         </button>
       </PageHeading>
+      <QuoteProgress status={q.status} events={q.events} />
       <div className="detail-grid">
         <div>
           <section className="panel detail-panel">
@@ -878,7 +1096,9 @@ export function QuoteDetail() {
               <strong>{money(q.amount)}</strong>
               <p className="preserve-lines">
                 {q.notes ||
-                  "A equipe ainda não adicionou uma proposta. As informações aparecerão aqui assim que estiverem disponíveis."}
+                  (q.amount != null
+                    ? "O valor foi informado pela equipe. Entre em contato para confirmar o escopo e as condições do atendimento."
+                    : "A equipe ainda não adicionou uma proposta. As informações aparecerão aqui assim que estiverem disponíveis.")}
               </p>
               <p className="subtle">
                 Valores e condições sujeitos à confirmação com a equipe. Para

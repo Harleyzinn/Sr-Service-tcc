@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { services } from "./domain";
+import { services, searchText } from "./domain";
 import { Brand, ButtonLink, Eyebrow, Icon } from "./ui";
 function ServiceCard({ service, index }) {
   return (
@@ -62,7 +62,7 @@ export function Home() {
               EXPERTISE QUE FAZ A DIFERENÇA
               <small>Do diagnóstico à solução.</small>
             </span>
-            <span className="image-index">01 / 04</span>
+            <span className="image-index">EXPERTISE INDUSTRIAL</span>
           </div>
         </div>
         <div className="hero-bottom">
@@ -265,9 +265,7 @@ export function Services() {
         <div className="service-detail-list">
           {services
             .filter((s) =>
-              `${s.title} ${s.text}`
-                .toLowerCase()
-                .includes(search.toLowerCase()),
+              searchText(`${s.title} ${s.text}`).includes(searchText(search)),
             )
             .map((s, i) => (
               <article id={s.id} key={s.id} className="service-detail">
@@ -298,7 +296,7 @@ export function Services() {
             ))}
         </div>
         {!services.some((s) =>
-          `${s.title} ${s.text}`.toLowerCase().includes(search.toLowerCase()),
+          searchText(`${s.title} ${s.text}`).includes(searchText(search)),
         ) && (
           <div className="empty">
             <h3>Nenhuma solução encontrada</h3>
@@ -468,6 +466,12 @@ export function Privacy() {
         pessoais reais nesse ambiente.
       </p>
       <h2>Seus dados</h2>
+      <p>
+        Durante o preenchimento de um orçamento, um rascunho é salvo nesta aba
+        por até 24 horas para permitir retomar a solicitação. Ele não é enviado
+        à equipe até a confirmação e é removido ao descartar, enviar o pedido ou
+        sair da conta.
+      </p>
       <p>
         Você pode corrigir informações no perfil. Para solicitar acesso,
         correção adicional ou exclusão de dados, entre em contato pelo e-mail

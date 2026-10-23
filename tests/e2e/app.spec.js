@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 test("public pages, protected routes, legacy URLs and 404", async ({
   page,
 }) => {
@@ -201,4 +202,117 @@ test("quote validation preserves typed data across steps and blocks invalid cont
   await expect(
     page.getByRole("textbox", { name: "Telefone com DDD" }),
   ).toHaveValue("123");
+});
+test("draft resumes after reload, discard asks confirmation, and logout removes drafts", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  await page.getByRole("button", { name: "Sou cliente" }).click();
+  await page.goto("/app/novo-orcamento");
+  await page
+    .getByRole("combobox", { name: "Tipo de serviço" })
+    .selectOption("Peças e componentes");
+  await page
+    .getByRole("textbox", { name: "Equipamento", exact: true })
+    .fill("Talha do rascunho");
+  await page
+    .getByRole("textbox", { name: "Descreva sua necessidade" })
+    .fill("Precisamos substituir o conjunto de freios da talha.");
+  await page.getByRole("button", { name: "Continuar", exact: true }).click();
+  await page
+    .getByRole("textbox", { name: "Empresa", exact: true })
+    .fill("Empresa do rascunho");
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Onde será o atendimento?" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: "Empresa", exact: true }),
+  ).toHaveValue("Empresa do rascunho");
+  await page.getByRole("button", { name: "Voltar", exact: true }).click();
+  await expect(
+    page.getByRole("textbox", { name: "Equipamento", exact: true }),
+  ).toHaveValue("Talha do rascunho");
+  await page
+    .getByRole("button", { name: "Descartar rascunho", exact: true })
+    .click();
+  await expect(
+    page.getByRole("dialog", { name: "Descartar rascunho?" }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await page
+    .getByRole("button", { name: "Descartar rascunho", exact: true })
+    .click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Descartar rascunho", exact: true })
+    .click();
+  await expect(
+    page.getByRole("textbox", { name: "Equipamento", exact: true }),
+  ).toHaveValue("");
+  await page
+    .getByRole("textbox", { name: "Equipamento", exact: true })
+    .fill("Rascunho temporário");
+  await page.getByRole("button", { name: "Sair da conta" }).click();
+  expect(
+    await page.evaluate(() =>
+      Object.keys(sessionStorage).filter((k) =>
+        k.startsWith("sr-quote-draft-v1:"),
+      ),
+    ),
+  ).toEqual([]);
+});
+test("service filters, ordering, filtered CSV export and clearing filters work together", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  await page.getByRole("button", { name: "Visão da equipe" }).click();
+  await page.goto("/app/orcamentos");
+  await page
+    .getByRole("combobox", { name: "Ordenar orçamentos" })
+    .selectOption("antigos");
+  await expect(page.locator("tbody tr").first()).toContainText("SR-1035");
+  await page
+    .getByRole("combobox", { name: "Filtrar por serviço" })
+    .selectOption("Peças e componentes");
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+  const downloadEvent = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Exportar CSV" }).click();
+  const download = await downloadEvent;
+  const csv = await readFile(await download.path(), "utf8");
+  expect(csv).toContain("SR-1047");
+  expect(csv).not.toContain("SR-1048");
+  await page.getByRole("button", { name: "Limpar filtros" }).click();
+  await expect(page.locator("tbody tr")).toHaveCount(4);
+  await expect(
+    page.getByRole("combobox", { name: "Ordenar orçamentos" }),
+  ).toHaveValue("antigos");
+});
+test("mobile quotes use readable cards and menu supports Escape and keyboard focus", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/login");
+  await page.getByRole("button", { name: "Sou cliente" }).click();
+  await page.getByRole("button", { name: "Abrir menu do portal" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Navegação do portal" }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("button", { name: "Abrir menu do portal" }),
+  ).toBeFocused();
+  await page.goto("/app/orcamentos");
+  await expect(page.locator(".quote-mobile-card")).toHaveCount(4);
+  await expect(page.locator(".quote-desktop-table")).not.toBeVisible();
+  await page.getByRole("link", { name: "SR-1048", exact: true }).click();
+  await expect(
+    page.getByRole("region", { name: "Andamento do orçamento" }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
 });
