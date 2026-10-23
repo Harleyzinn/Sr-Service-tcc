@@ -1,11 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { configured, friendly, supabase } from "./api";
+import { configured, friendly } from "./api";
+import {
+  login,
+  register,
+  resendVerification,
+  requestPasswordReset,
+  resetPassword,
+} from "./firebase-auth";
 import { useAuth } from "./auth";
 import { digits, validateProfile } from "./domain";
 import { Brand, ErrorBox, Eyebrow, Field, Icon, SuccessBox } from "./ui";
 export function AuthPage({ mode = "login" }) {
-  const { user, loading, startDemo, recovery, setRecovery } = useAuth();
+  const { user, loading, startDemo, error: sessionError } = useAuth();
+  const [canResend, setCanResend] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const [busy, setBusy] = useState(false);
@@ -17,12 +25,9 @@ export function AuthPage({ mode = "login" }) {
   useEffect(() => {
     setError("");
     setSuccess("");
+    setCanResend(false);
   }, [mode]);
-  useEffect(() => {
-    if (recovery && mode !== "reset")
-      navigate("/redefinir-senha", { replace: true });
-  }, [recovery, mode, navigate]);
-  if (user && !loading && mode === "login" && !recovery)
+  if (user && !loading && mode === "login")
     return <Navigate to={target} replace />;
   const titles = {
     login: [
@@ -52,71 +57,54 @@ export function AuthPage({ mode = "login" }) {
     setSuccess("");
     if (!configured) {
       setError(
-        "O acesso real precisa da configuração do Supabase. Você pode explorar o portal pela demonstração abaixo.",
+        "O acesso real precisa da configuração do Firebase. Você pode explorar o portal pela demonstração abaixo.",
       );
       return;
     }
     const form = Object.fromEntries(new FormData(e.currentTarget));
     setBusy(true);
     try {
-      let result;
-      if (mode === "login")
-        result = await supabase.auth.signInWithPassword({
-          email: form.email.trim(),
-          password: form.password,
-        });
+      if (mode === "login") {
+        await login(form.email.trim(), form.password);
+        navigate(target, { replace: true });
+      }
       if (mode === "register") {
         validateProfile(form);
         if (form.password !== form.confirm)
           throw new Error("As senhas precisam ser iguais.");
-        result = await supabase.auth.signUp({
-          email: form.email.trim(),
-          password: form.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/app`,
-            data: {
-              full_name: form.full_name.trim(),
-              phone: digits(form.phone),
-              company: form.company.trim(),
-            },
+        await register(
+          {
+            email: form.email.trim(),
+            full_name: form.full_name.trim(),
+            phone: digits(form.phone),
+            company: form.company.trim(),
           },
-        });
-        if (!result.error && !result.data.session) {
-          setSuccess(
-            "Conta solicitada! Confira seu e-mail para confirmar o cadastro e depois entre no portal.",
-          );
-          return;
-        }
+          form.password,
+        );
+        setSuccess(
+          "Conta criada! Confira seu e-mail para confirmar o cadastro e depois entre no portal.",
+        );
       }
       if (mode === "forgot") {
-        result = await supabase.auth.resetPasswordForEmail(form.email.trim(), {
-          redirectTo: `${window.location.origin}/redefinir-senha`,
-        });
-        if (!result.error)
-          setSuccess(
-            "Se houver uma conta com esse e-mail, você receberá as instruções de recuperação. Confira também o spam.",
-          );
+        await requestPasswordReset(form.email.trim());
+        setSuccess(
+          "Se houver uma conta com esse e-mail, você receberá as instruções de recuperação. Confira também o spam.",
+        );
       }
       if (mode === "reset") {
-        if (!user)
-          throw new Error(
-            "Abra o link de recuperação recebido por e-mail. Se ele expirou, solicite um novo.",
-          );
         if (form.password !== form.confirm)
           throw new Error("As senhas precisam ser iguais.");
-        result = await supabase.auth.updateUser({ password: form.password });
-        if (!result.error) {
-          setRecovery(false);
-          const signOut = await supabase.auth.signOut();
-          if (signOut.error) throw signOut.error;
-          setSuccess("Senha atualizada. Entre novamente com sua nova senha.");
-        }
+        const code = new URLSearchParams(location.search).get("oobCode");
+        await resetPassword(code, form.password);
+        setSuccess("Senha atualizada. Entre novamente com sua nova senha.");
       }
-      if (result?.error) throw result.error;
-      if (mode === "login" || mode === "register")
-        navigate(target, { replace: true });
     } catch (e) {
       setError(friendly(e));
+      if (
+        e.code === "auth/unverified-email" ||
+        e.code === "registration/incomplete"
+      )
+        setCanResend(true);
     } finally {
       setBusy(false);
     }
@@ -167,7 +155,31 @@ export function AuthPage({ mode = "login" }) {
           <Eyebrow>{eyebrow}</Eyebrow>
           <h1>{title}</h1>
           <p>{description}</p>
-          <ErrorBox>{error}</ErrorBox>
+          <ErrorBox>{error || sessionError}</ErrorBox>
+          {canResend && (
+            <button
+              type="button"
+              className="button secondary"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  await resendVerification();
+                  setSuccess(
+                    "Confirmação reenviada. Confira sua caixa de entrada.",
+                  );
+                  setError("");
+                  setCanResend(false);
+                } catch (e) {
+                  setError(friendly(e));
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              Reenviar confirmação
+            </button>
+          )}
           {success && <SuccessBox>{success}</SuccessBox>}
           {!success && (
             <form onSubmit={submit} key={mode}>

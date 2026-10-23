@@ -10,6 +10,7 @@ import {
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./auth";
 import { AuthPage } from "./auth-pages";
+import { EmailAction } from "./email-action";
 import { About, Contact, Home, NotFound, Privacy, Services } from "./public";
 import {
   Customers,
@@ -111,6 +112,7 @@ function App() {
                 <Route path="*" element={<LegacyRedirect />} />
               </Route>
               <Route path="login" element={<AuthPage />} />
+              <Route path="acao-email" element={<EmailAction />} />
               <Route path="cadastro" element={<AuthPage mode="register" />} />
               <Route
                 path="recuperar-senha"

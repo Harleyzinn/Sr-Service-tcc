@@ -5,7 +5,12 @@ export default defineConfig({
   build: {
     target: "es2022",
     rollupOptions: {
-      output: { manualChunks: { supabase: ["@supabase/supabase-js"] } },
+      output: {
+        manualChunks: {
+          "firebase-auth": ["firebase/app", "firebase/auth"],
+          "firebase-store": ["firebase/firestore/lite"],
+        },
+      },
     },
   },
 });

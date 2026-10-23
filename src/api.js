@@ -1,14 +1,11 @@
-import { createClient } from "@supabase/supabase-js";
 import { validateQuote, validateProfile } from "./domain";
-export const configured = Boolean(
-  import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY,
-);
-export const supabase = configured
-  ? createClient(
-      import.meta.env.VITE_SUPABASE_URL,
-      import.meta.env.VITE_SUPABASE_ANON_KEY,
-    )
-  : null;
+import {
+  ensureProfile,
+  listQuotes,
+  createQuote,
+  updateQuote,
+} from "./firebase-data";
+export { configured } from "./firebase";
 const key = "sr-service-demo-v2";
 const demoCustomer = {
   id: "demo-customer",
@@ -113,43 +110,65 @@ function readDemo() {
 function writeDemo(data) {
   localStorage.setItem(key, JSON.stringify(data));
 }
-function unwrap(result) {
-  if (result.error) throw result.error;
-  return result.data;
-}
 export function friendly(error) {
-  const text = error?.message || "Não foi possível concluir. Tente novamente.";
-  if (/Invalid login credentials/i.test(text))
-    return "E-mail ou senha incorretos.";
-  if (/Email not confirmed/i.test(text))
-    return "Confirme seu e-mail antes de entrar.";
-  if (/rate limit/i.test(text))
-    return "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
-  if (/fetch|network/i.test(text))
-    return "Não foi possível conectar. Verifique sua conexão e tente novamente.";
-  if (/relation|schema cache/i.test(text))
-    return "O banco ainda precisa ser configurado com a migração do projeto.";
-  return text;
+  const messages = {
+    "auth/invalid-credential": "E-mail ou senha incorretos.",
+    "auth/wrong-password": "E-mail ou senha incorretos.",
+    "auth/user-not-found": "E-mail ou senha incorretos.",
+    "auth/email-already-in-use":
+      "Este e-mail já está cadastrado. Entre ou recupere sua senha.",
+    "auth/invalid-email": "Informe um e-mail válido.",
+    "auth/weak-password": "Escolha uma senha de pelo menos 8 caracteres.",
+    "auth/too-many-requests":
+      "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
+    "auth/network-request-failed":
+      "Não foi possível conectar. Verifique sua conexão e tente novamente.",
+    "auth/requires-recent-login":
+      "Por segurança, saia e entre novamente antes de alterar a senha.",
+    "auth/expired-action-code":
+      "Este link expirou. Solicite um novo link por e-mail.",
+    "auth/invalid-action-code":
+      "Este link é inválido ou já foi utilizado. Solicite um novo.",
+    "auth/unauthorized-domain":
+      "Este domínio precisa ser autorizado no Firebase Authentication.",
+    "permission-denied":
+      "Acesso não autorizado. Verifique sua conta e as regras do Firestore.",
+    unavailable:
+      "O serviço está indisponível. Verifique sua conexão e tente novamente.",
+    "failed-precondition":
+      "O Firestore precisa do índice configurado no projeto. Consulte o responsável pelo sistema.",
+  };
+  return (
+    messages[error?.code] ||
+    error?.message ||
+    "Não foi possível concluir. Tente novamente."
+  );
 }
 export const api = {
   async profile(user, demo) {
     if (demo)
       return { ...demoProfile(demo), ...(readDemo().profiles[user.id] || {}) };
-    return unwrap(
-      await supabase.from("sr_profiles").select("*").eq("id", user.id).single(),
-    );
+    return ensureProfile(user);
   },
   async quotes(user, demo, admin) {
     if (demo)
       return readDemo().quotes.filter((q) => admin || q.user_id === user.id);
-    let query = supabase
-      .from("sr_quotes")
-      .select("*, events:sr_quote_events(*)")
-      .order("created_at", { ascending: false });
-    if (!admin) query = query.eq("user_id", user.id);
-    return unwrap(await query);
+    return listQuotes(user, admin);
   },
   async createQuote(user, demo, payload) {
+    payload = Object.fromEntries(
+      [
+        "service",
+        "equipment",
+        "description",
+        "urgency",
+        "company",
+        "contact_name",
+        "email",
+        "phone",
+        "address",
+      ].map((key) => [key, payload[key]]),
+    );
     validateQuote(payload);
     if (demo) {
       const data = readDemo();
@@ -171,13 +190,7 @@ export const api = {
       writeDemo(data);
       return quote;
     }
-    return unwrap(
-      await supabase
-        .from("sr_quotes")
-        .insert({ ...payload, user_id: user.id })
-        .select()
-        .single(),
-    );
+    return createQuote(user, payload);
   },
   async saveProfile(user, demo, profile) {
     validateProfile(profile);
@@ -193,14 +206,7 @@ export const api = {
       writeDemo(data);
       return { ...profile, ...payload };
     }
-    return unwrap(
-      await supabase
-        .from("sr_profiles")
-        .update(payload)
-        .eq("id", user.id)
-        .select()
-        .single(),
-    );
+    return ensureProfile(user, payload);
   },
   async updateQuote(demo, id, payload) {
     if (demo) {
@@ -218,13 +224,6 @@ export const api = {
       writeDemo(data);
       return q;
     }
-    return unwrap(
-      await supabase
-        .from("sr_quotes")
-        .update(payload)
-        .eq("id", id)
-        .select()
-        .single(),
-    );
+    return updateQuote(id, payload);
   },
 };

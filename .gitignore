@@ -6,3 +6,6 @@ dist/
 playwright-report/
 test-results/
 artifacts/
+.firebase/
+*-debug.log
+firebase-admin-key*.json

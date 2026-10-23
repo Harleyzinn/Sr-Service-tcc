@@ -128,7 +128,7 @@ test("auth forms give honest configuration feedback and recovery navigation", as
   await page.getByLabel("Senha", { exact: true }).fill("senha-teste");
   await page.getByRole("button", { name: "Entrar no portal" }).click();
   await expect(page.getByRole("alert")).toContainText(
-    "configuração do Supabase",
+    "configuração do Firebase",
   );
   await page.getByRole("link", { name: "Esqueci minha senha" }).click();
   await expect(

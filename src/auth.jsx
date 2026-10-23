@@ -1,11 +1,7 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useCallback,
-} from "react";
-import { api, configured, demoProfile, friendly, supabase } from "./api";
+import { createContext, useContext, useEffect, useState } from "react";
+import { onIdTokenChanged, signOut } from "firebase/auth";
+import { api, demoProfile, friendly } from "./api";
+import { configured, authClient } from "./firebase";
 const Context = createContext(null);
 export function AuthProvider({ children }) {
   const [demo, setDemo] = useState(
@@ -15,76 +11,101 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [recovery, setRecovery] = useState(false);
-  const loadProfile = useCallback(async (u, mode) => {
-    setError("");
-    try {
-      setProfile(u ? await api.profile(u, mode) : null);
-    } catch (e) {
-      setError(friendly(e));
-      setProfile(null);
-    }
-  }, []);
+  const [team, setTeam] = useState(false);
   useEffect(() => {
     let active = true;
+    let revision = 0;
+    setError("");
+    setLoading(true);
     if (demo) {
       const u = demoProfile(demo);
       setUser(u);
-      loadProfile(u, demo).finally(() => setLoading(false));
-      return;
+      api
+        .profile(u, demo)
+        .then((p) => {
+          if (active) setProfile(p);
+        })
+        .catch((e) => {
+          if (active) setError(friendly(e));
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+      return () => {
+        active = false;
+      };
     }
     if (!configured) {
       setUser(null);
       setProfile(null);
+      setTeam(false);
       setLoading(false);
       return;
     }
-    setLoading(true);
-    supabase.auth
-      .getSession()
-      .then(async ({ data, error }) => {
+    const unsubscribe = onIdTokenChanged(
+      authClient,
+      async (raw) => {
+        const current = ++revision;
         if (!active) return;
-        if (error) setError(friendly(error));
-        setUser(data.session?.user || null);
-        await loadProfile(data.session?.user, null);
-        if (active) setLoading(false);
-      })
-      .catch((e) => {
+        setLoading(true);
+        if (!raw?.emailVerified) {
+          setUser(null);
+          setProfile(null);
+          setTeam(false);
+          setLoading(false);
+          return;
+        }
+        try {
+          const token = await raw.getIdTokenResult();
+          const nextUser = {
+            id: raw.uid,
+            email: raw.email,
+            displayName: raw.displayName,
+          };
+          const nextProfile = await api.profile(nextUser, null);
+          if (active && current === revision) {
+            setUser(nextUser);
+            setProfile(nextProfile);
+            setTeam(token.claims.admin === true);
+            setError("");
+          }
+        } catch (e) {
+          if (active && current === revision) {
+            setError(friendly(e));
+            setUser(null);
+            setProfile(null);
+            setTeam(false);
+          }
+        } finally {
+          if (active && current === revision) setLoading(false);
+        }
+      },
+      (e) => {
         if (active) {
           setError(friendly(e));
           setLoading(false);
         }
-      });
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!active) return;
-      if (event === "PASSWORD_RECOVERY") setRecovery(true);
-      setUser(session?.user || null);
-      setTimeout(() => {
-        if (active) loadProfile(session?.user, null);
-      }, 0);
-    });
+      },
+    );
     return () => {
       active = false;
-      subscription.unsubscribe();
+      revision++;
+      unsubscribe();
     };
-  }, [demo, loadProfile]);
+  }, [demo]);
   const startDemo = (role) => {
     sessionStorage.setItem("sr-demo-role", role);
     setDemo(role);
   };
   const logout = async () => {
-    if (!demo && supabase) {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-    }
+    if (!demo && authClient) await signOut(authClient);
     sessionStorage.removeItem("sr-demo-role");
     setDemo(null);
     setUser(null);
     setProfile(null);
+    setTeam(false);
+    setError("");
   };
-  const admin = demo ? demo === "admin" : user?.app_metadata?.role === "admin";
   return (
     <Context.Provider
       value={{
@@ -92,14 +113,12 @@ export function AuthProvider({ children }) {
         profile,
         setProfile,
         demo,
-        admin,
+        admin: demo ? demo === "admin" : team,
         loading,
         error,
         configured,
         startDemo,
         logout,
-        recovery,
-        setRecovery,
       }}
     >
       {children}

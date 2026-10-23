@@ -6,7 +6,8 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { useAuth } from "./auth";
-import { api, friendly, supabase } from "./api";
+import { api, friendly } from "./api";
+import { changePassword } from "./firebase-auth";
 import {
   date,
   filterQuotes,
@@ -1020,10 +1021,7 @@ export function Profile() {
     }
     setPassBusy(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: data.password,
-      });
-      if (error) throw error;
+      await changePassword(data.password);
       form.reset();
       toast("Senha atualizada com sucesso.");
     } catch (e) {
@@ -1035,8 +1033,8 @@ export function Profile() {
   if (!profile)
     return (
       <ErrorBox>
-        Não foi possível carregar seu perfil. Confira a configuração do banco ou
-        entre novamente.
+        Não foi possível carregar seu perfil. Confira a configuração do Firebase
+        ou entre novamente.
       </ErrorBox>
     );
   return (

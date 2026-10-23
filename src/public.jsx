@@ -461,11 +461,11 @@ export function Privacy() {
       </p>
       <h2>Autenticação e armazenamento</h2>
       <p>
-        A autenticação é processada pelo Supabase. O aplicativo não armazena
-        senhas em suas tabelas de perfil. A sessão é mantida no navegador para
-        permitir o acesso à conta. Na demonstração, somente registros fictícios
-        são armazenados localmente; evite inserir dados pessoais reais nesse
-        ambiente.
+        A autenticação é processada pelo Firebase Authentication. O aplicativo
+        não armazena senhas em suas documentos de perfil. A sessão é mantida no
+        navegador para permitir o acesso à conta. Na demonstração, somente
+        registros fictícios são armazenados localmente; evite inserir dados
+        pessoais reais nesse ambiente.
       </p>
       <h2>Seus dados</h2>
       <p>
