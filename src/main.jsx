@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import {
   BrowserRouter,
@@ -9,18 +9,35 @@ import {
   useLocation,
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./auth";
-import { AuthPage } from "./auth-pages";
-import { EmailAction } from "./email-action";
-import { About, Contact, Home, NotFound, Privacy, Services } from "./public";
-import {
-  Customers,
-  Dashboard,
-  Help,
-  NewQuote,
-  Profile,
-  QuoteDetail,
-  Quotes,
-} from "./portal";
+import { NetworkNotice } from "./network";
+import { PreferencesProvider } from "./theme";
+const AuthPage = lazy(() =>
+  import("./auth-pages").then((m) => ({ default: m.AuthPage })),
+);
+const EmailAction = lazy(() =>
+  import("./email-action").then((m) => ({ default: m.EmailAction })),
+);
+const publicPage = (name) =>
+  lazy(() => import("./public").then((m) => ({ default: m[name] })));
+const Home = publicPage("Home"),
+  About = publicPage("About"),
+  Contact = publicPage("Contact"),
+  NotFound = publicPage("NotFound"),
+  Privacy = publicPage("Privacy"),
+  Services = publicPage("Services");
+const portalPage = (name) =>
+  lazy(() => import("./portal").then((m) => ({ default: m[name] })));
+const Customers = portalPage("Customers"),
+  Dashboard = portalPage("Dashboard"),
+  Help = portalPage("Help"),
+  NewQuote = portalPage("NewQuote"),
+  Profile = portalPage("Profile"),
+  QuoteDetail = portalPage("QuoteDetail"),
+  Quotes = portalPage("Quotes");
+const Finance = lazy(() => import("./finance/page"));
+const Settings = lazy(() =>
+  import("./preferences").then((m) => ({ default: m.Settings })),
+);
 import {
   Loading,
   PortalLayout,
@@ -35,6 +52,7 @@ import "@fontsource/dm-sans/latin-700.css";
 import "@fontsource/barlow-condensed/latin-600.css";
 import "@fontsource/barlow-condensed/latin-800.css";
 import "./styles.css";
+import "./theme.css";
 function Protected({ adminOnly = false }) {
   const { user, loading, admin } = useAuth();
   const location = useLocation();
@@ -97,46 +115,56 @@ function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
-          <ToastProvider>
-            <a href="#main-content" className="skip-link">
-              Pular para o conteúdo
-            </a>
-            <ScrollTop />
-            <Routes>
-              <Route element={<PublicLayout />}>
-                <Route index element={<Home />} />
-                <Route path="sobre" element={<About />} />
-                <Route path="servicos" element={<Services />} />
-                <Route path="contato" element={<Contact />} />
-                <Route path="privacidade" element={<Privacy />} />
-                <Route path="*" element={<LegacyRedirect />} />
-              </Route>
-              <Route path="login" element={<AuthPage />} />
-              <Route path="acao-email" element={<EmailAction />} />
-              <Route path="cadastro" element={<AuthPage mode="register" />} />
-              <Route
-                path="recuperar-senha"
-                element={<AuthPage mode="forgot" />}
-              />
-              <Route
-                path="redefinir-senha"
-                element={<AuthPage mode="reset" />}
-              />
-              <Route element={<Protected />}>
-                <Route path="app" element={<PortalLayout />}>
-                  <Route index element={<Dashboard />} />
-                  <Route path="orcamentos" element={<Quotes />} />
-                  <Route path="orcamentos/:id" element={<QuoteDetail />} />
-                  <Route path="novo-orcamento" element={<NewQuote />} />
-                  <Route path="perfil" element={<Profile />} />
-                  <Route path="ajuda" element={<Help />} />
-                  <Route element={<Protected adminOnly />}>
-                    <Route path="clientes" element={<Customers />} />
+          <PreferencesProvider>
+            <ToastProvider>
+              <a href="#main-content" className="skip-link">
+                Pular para o conteúdo
+              </a>
+              <ScrollTop />
+              <NetworkNotice />
+              <Suspense fallback={<Loading />}>
+                <Routes>
+                  <Route element={<PublicLayout />}>
+                    <Route index element={<Home />} />
+                    <Route path="sobre" element={<About />} />
+                    <Route path="servicos" element={<Services />} />
+                    <Route path="contato" element={<Contact />} />
+                    <Route path="privacidade" element={<Privacy />} />
+                    <Route path="*" element={<LegacyRedirect />} />
                   </Route>
-                </Route>
-              </Route>
-            </Routes>
-          </ToastProvider>
+                  <Route path="login" element={<AuthPage />} />
+                  <Route path="acao-email" element={<EmailAction />} />
+                  <Route
+                    path="cadastro"
+                    element={<AuthPage mode="register" />}
+                  />
+                  <Route
+                    path="recuperar-senha"
+                    element={<AuthPage mode="forgot" />}
+                  />
+                  <Route
+                    path="redefinir-senha"
+                    element={<AuthPage mode="reset" />}
+                  />
+                  <Route element={<Protected />}>
+                    <Route path="app" element={<PortalLayout />}>
+                      <Route index element={<Dashboard />} />
+                      <Route path="orcamentos" element={<Quotes />} />
+                      <Route path="orcamentos/:id" element={<QuoteDetail />} />
+                      <Route path="novo-orcamento" element={<NewQuote />} />
+                      <Route path="perfil" element={<Profile />} />
+                      <Route path="financeiro" element={<Finance />} />
+                      <Route path="configuracoes" element={<Settings />} />
+                      <Route path="ajuda" element={<Help />} />
+                      <Route element={<Protected adminOnly />}>
+                        <Route path="clientes" element={<Customers />} />
+                      </Route>
+                    </Route>
+                  </Route>
+                </Routes>
+              </Suspense>
+            </ToastProvider>
+          </PreferencesProvider>
         </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>

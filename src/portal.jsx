@@ -585,6 +585,11 @@ export function NewQuote() {
   const [params] = useSearchParams();
   const key = draftKey(user.id, demo);
   const [restored] = useState(() => readDraft(key));
+  const [requestId, setRequestId] = useState(() =>
+    /^[a-f0-9]{32}$/.test(restored?.requestId || "")
+      ? restored.requestId
+      : crypto.randomUUID().replaceAll("-", ""),
+  );
   const [step, setStep] = useState(restored?.step || 1);
   const [draftSaved, setDraftSaved] = useState(false);
   const [discard, setDiscard] = useState(false);
@@ -611,12 +616,12 @@ export function NewQuote() {
   const hasDraft = Boolean(form.service || form.equipment || form.description);
   useEffect(() => {
     if (admin || submitted.current) return;
-    if (hasDraft) setDraftSaved(saveDraft(key, form, step));
+    if (hasDraft) setDraftSaved(saveDraft(key, form, step, requestId));
     else {
       clearDraft(key);
       setDraftSaved(false);
     }
-  }, [key, form, step, admin, hasDraft]);
+  }, [key, form, step, admin, hasDraft, requestId]);
   useEffect(() => {
     if (previousStep.current !== step) {
       formHeading.current?.focus();
@@ -626,6 +631,7 @@ export function NewQuote() {
   function discardDraft() {
     clearDraft(key);
     setForm({ ...freshForm(), service: "" });
+    setRequestId(crypto.randomUUID().replaceAll("-", ""));
     setStep(1);
     setError("");
     setDiscard(false);
@@ -668,7 +674,7 @@ export function NewQuote() {
         return;
       }
       setBusy(true);
-      const q = await api.createQuote(user, demo, form);
+      const q = await api.createQuote(user, demo, form, requestId);
       submitted.current = true;
       clearDraft(key);
       toast("Solicitação enviada. Você já pode acompanhar o atendimento.");
@@ -1000,11 +1006,16 @@ export function QuoteDetail() {
     }
     setBusy(true);
     try {
-      await api.updateQuote(demo, id, {
-        status: data.status,
-        amount,
-        notes: data.notes.trim(),
-      });
+      await api.updateQuote(
+        demo,
+        id,
+        {
+          status: data.status,
+          amount,
+          notes: data.notes.trim(),
+        },
+        quote.revision || quote.updated_at || quote.created_at,
+      );
       toast("Orçamento atualizado com sucesso.");
       refresh();
     } catch (e) {
@@ -1038,6 +1049,10 @@ export function QuoteDetail() {
         description={q.service}
       >
         <Badge status={q.status} />
+        <button className="button secondary" onClick={refresh} disabled={busy}>
+          <Icon name="RefreshCw" size={16} />
+          Recarregar dados
+        </button>
         <button className="button secondary" onClick={() => window.print()}>
           <Icon name="Download" size={17} />
           Imprimir / PDF

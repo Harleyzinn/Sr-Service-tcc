@@ -13,11 +13,14 @@ import {
 import { db } from "./firebase";
 
 const iso = (value) => (value?.toDate ? value.toDate().toISOString() : value);
+const stamp = (value) =>
+  value?.seconds != null ? `${value.seconds}:${value.nanoseconds}` : value;
 export function normalizeQuote(snapshot) {
   const data = snapshot.data();
   return {
     ...data,
     id: snapshot.id,
+    revision: stamp(data.updated_at || data.created_at),
     created_at: iso(data.created_at),
     updated_at: iso(data.updated_at),
     events: Object.entries(data.events || {}).map(([id, event]) => ({
@@ -64,8 +67,10 @@ export async function getQuote(id) {
   const snapshot = await getDoc(doc(db, "quotes", id));
   return snapshot.exists() ? normalizeQuote(snapshot) : null;
 }
-export async function createQuote(user, payload) {
-  const ref = doc(collection(db, "quotes"));
+export async function createQuote(user, payload, operationId) {
+  const ref = operationId
+    ? doc(db, "quotes", operationId)
+    : doc(collection(db, "quotes"));
   // Firestore's unique document ID is also the reference, avoiding a writable global counter.
   const quote = {
     ...payload,
@@ -79,15 +84,39 @@ export async function createQuote(user, payload) {
     last_event_id: "received",
     events: { received: { status: "Recebido", created_at: serverTimestamp() } },
   };
-  await setDoc(ref, quote);
+  try {
+    await setDoc(ref, quote);
+  } catch (error) {
+    try {
+      const existing = await getDoc(ref);
+      if (
+        existing.exists() &&
+        existing.data().user_id === user.id &&
+        Object.entries(payload).every(
+          ([key, value]) => existing.data()[key] === value,
+        )
+      )
+        return { id: ref.id, ...existing.data() };
+    } catch {
+      /* keep original write error */
+    }
+    throw error;
+  }
   return { ...quote, id: ref.id };
 }
-export async function updateQuote(id, payload) {
+export async function updateQuote(id, payload, expectedRevision) {
   const ref = doc(db, "quotes", id);
   await runTransaction(db, async (transaction) => {
     const snapshot = await transaction.get(ref);
     if (!snapshot.exists()) throw new Error("Orçamento não encontrado.");
     const previous = snapshot.data();
+    if (
+      expectedRevision &&
+      stamp(previous.updated_at || previous.created_at) !== expectedRevision
+    )
+      throw new Error(
+        "Outro acesso atualizou este orçamento. Recarregue os dados antes de salvar suas alterações.",
+      );
     const changes = {
       status: payload.status,
       amount: payload.amount,

@@ -169,13 +169,13 @@ export function sortQuotes(quotes, order = "recentes") {
           : byDate(b) - byDate(a),
   );
 }
+export function csvCell(value) {
+  let text = String(value ?? "");
+  // Prevent spreadsheet formula execution in user-provided cells.
+  if (/^[\s\u0000-\u001f]*[=+@-]/.test(text)) text = "'" + text;
+  return '"' + text.replaceAll('"', '""') + '"';
+}
 export function quotesCsv(quotes) {
-  const cell = (value) => {
-    let text = String(value ?? "");
-    // Prevent spreadsheet formula execution in user-provided cells.
-    if (/^[\s\u0000-\u001f]*[=+@-]/.test(text)) text = "'" + text;
-    return '"' + text.replaceAll('"', '""') + '"';
-  };
   return (
     "\uFEFF" +
     [
@@ -200,7 +200,7 @@ export function quotesCsv(quotes) {
         q.amount == null ? "" : Number(q.amount).toFixed(2).replace(".", ","),
       ]),
     ]
-      .map((row) => row.map(cell).join(";"))
+      .map((row) => row.map(csvCell).join(";"))
       .join("\r\n")
   );
 }

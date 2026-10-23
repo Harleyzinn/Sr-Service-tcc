@@ -132,6 +132,14 @@ export function friendly(error) {
       "Este link é inválido ou já foi utilizado. Solicite um novo.",
     "auth/unauthorized-domain":
       "Este domínio precisa ser autorizado no Firebase Authentication.",
+    "auth/popup-closed-by-user":
+      "A janela de login foi fechada. Tente novamente quando quiser.",
+    "auth/popup-blocked":
+      "O navegador bloqueou a janela de login. Permita pop-ups deste site e tente novamente.",
+    "auth/operation-not-allowed":
+      "Este provedor de login precisa ser habilitado no Firebase Authentication.",
+    "auth/account-exists-with-different-credential":
+      "Este e-mail já usa outro método de acesso. Entre pelo método original.",
     "permission-denied":
       "Acesso não autorizado. Verifique sua conta e as regras do Firestore.",
     unavailable:
@@ -165,7 +173,7 @@ export const api = {
       return readDemo().quotes.filter((q) => admin || q.user_id === user.id);
     return listQuotes(user, admin);
   },
-  async createQuote(user, demo, payload) {
+  async createQuote(user, demo, payload, operationId) {
     payload = Object.fromEntries(
       [
         "service",
@@ -182,10 +190,24 @@ export const api = {
     validateQuote(payload);
     if (demo) {
       const data = readDemo();
+      const existing = operationId
+        ? data.quotes.find((q) => q.id === operationId && q.user_id === user.id)
+        : null;
+      if (existing) {
+        if (
+          Object.entries(payload).every(
+            ([key, value]) => existing[key] === value,
+          )
+        )
+          return existing;
+        throw new Error(
+          "Este envio já foi registrado com outros dados. Inicie uma nova solicitação.",
+        );
+      }
       const now = new Date().toISOString();
       const quote = {
         ...payload,
-        id: crypto.randomUUID(),
+        id: operationId || crypto.randomUUID(),
         number: Math.max(1048, ...data.quotes.map((q) => q.number)) + 1,
         user_id: user.id,
         status: "Recebido",
@@ -200,7 +222,7 @@ export const api = {
       writeDemo(data);
       return quote;
     }
-    return createQuote(user, payload);
+    return createQuote(user, payload, operationId);
   },
   async saveProfile(user, demo, profile) {
     validateProfile(profile);
@@ -218,12 +240,19 @@ export const api = {
     }
     return ensureProfile(user, payload);
   },
-  async updateQuote(demo, id, payload) {
+  async updateQuote(demo, id, payload, expectedRevision) {
     if (demo) {
       if (demo !== "admin") throw new Error("Acesso restrito à equipe.");
       const data = readDemo();
       const q = data.quotes.find((q) => q.id === id);
       if (!q) throw new Error("Orçamento não encontrado.");
+      if (
+        expectedRevision &&
+        (q.revision || q.updated_at || q.created_at) !== expectedRevision
+      )
+        throw new Error(
+          "Outro acesso atualizou este orçamento. Recarregue os dados.",
+        );
       if (q.status !== payload.status)
         q.events.push({
           id: crypto.randomUUID(),
@@ -231,9 +260,11 @@ export const api = {
           created_at: new Date().toISOString(),
         });
       Object.assign(q, payload);
+      q.updated_at = new Date().toISOString();
+      q.revision = crypto.randomUUID();
       writeDemo(data);
       return q;
     }
-    return updateQuote(id, payload);
+    return updateQuote(id, payload, expectedRevision);
   },
 };

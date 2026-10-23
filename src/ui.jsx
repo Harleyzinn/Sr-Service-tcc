@@ -51,9 +51,20 @@ import {
   LockKeyhole,
   TrendingUp,
   RefreshCw,
+  Wallet,
+  CreditCard,
+  Target,
+  CalendarDays,
+  Bell,
+  Minus,
+  ArrowLeftRight,
+  ArrowDownLeft,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useAuth } from "./auth";
 import { friendly } from "./api";
+import { ThemeToggle } from "./theme";
 export const icons = {
   ArrowUpRight,
   ArrowRight,
@@ -92,6 +103,16 @@ export const icons = {
   LockKeyhole,
   TrendingUp,
   RefreshCw,
+  Wallet,
+  CreditCard,
+  Target,
+  CalendarDays,
+  Bell,
+  Minus,
+  ArrowLeftRight,
+  ArrowDownLeft,
+  Sun,
+  Moon,
 };
 export const Icon = ({ name, size = 20, ...props }) => {
   const Component = icons[name] || FileText;
@@ -276,6 +297,8 @@ export function ScrollTop() {
       "/app/orcamentos": "Orçamentos",
       "/app/novo-orcamento": "Novo orçamento",
       "/app/perfil": "Meu perfil",
+      "/app/financeiro": "Financeiro",
+      "/app/configuracoes": "Preferências",
       "/app/clientes": "Clientes",
       "/app/ajuda": "Central de ajuda",
       "/privacidade": "Privacidade",
@@ -434,6 +457,7 @@ export function PortalLayout() {
     ...(!admin
       ? [["/app/novo-orcamento", "Plus", "Novo orçamento"]]
       : [["/app/clientes", "Building2", "Clientes"]]),
+    ["/app/financeiro", "Wallet", "Meu financeiro"],
   ];
   async function exit() {
     try {
@@ -495,6 +519,10 @@ export function PortalLayout() {
             <Icon name="UserRound" />
             Meu perfil
           </NavLink>
+          <NavLink to="/app/configuracoes">
+            <Icon name="Settings2" />
+            Preferências
+          </NavLink>
           <NavLink to="/app/ajuda">
             <Icon name="CircleHelp" />
             Central de ajuda
@@ -535,6 +563,7 @@ export function PortalLayout() {
             <strong>SR Service</strong>
           </div>
           <div className="portal-header-right">
+            <ThemeToggle />
             <Link to="/" className="text-link">
               Visitar site <Icon name="ArrowUpRight" size={14} />
             </Link>
@@ -615,7 +644,10 @@ export function Modal({ title, children, onClose }) {
       ref={ref}
       className="modal"
       aria-labelledby={titleId}
-      onCancel={onClose}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
       onClick={(e) => {
         if (e.target === ref.current) onClose();
       }}

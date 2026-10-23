@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { onIdTokenChanged, signOut } from "firebase/auth";
 import { api, demoProfile, friendly } from "./api";
 import { configured, authClient } from "./firebase";
@@ -13,12 +13,14 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [team, setTeam] = useState(false);
+  const activeUser = useRef(null);
   useEffect(() => {
     let active = true;
     let revision = 0;
     setError("");
     setLoading(true);
     if (demo) {
+      activeUser.current = null;
       const u = demoProfile(demo);
       setUser(u);
       api
@@ -48,8 +50,15 @@ export function AuthProvider({ children }) {
       async (raw) => {
         const current = ++revision;
         if (!active) return;
-        setLoading(true);
+        const sameUser = Boolean(raw?.uid && activeUser.current === raw.uid);
+        if (!sameUser) {
+          setLoading(true);
+          setUser(null);
+          setProfile(null);
+          setTeam(false);
+        }
         if (!raw?.emailVerified) {
+          activeUser.current = null;
           setUser(null);
           setProfile(null);
           setTeam(false);
@@ -63,18 +72,26 @@ export function AuthProvider({ children }) {
             email: raw.email,
             displayName: raw.displayName,
           };
-          const nextProfile = await api.profile(nextUser, null);
+          const nextProfile = sameUser
+            ? null
+            : await api.profile(nextUser, null);
           if (active && current === revision) {
-            setUser(nextUser);
-            setProfile(nextProfile);
+            if (!sameUser) {
+              setUser(nextUser);
+              setProfile(nextProfile);
+            }
+            activeUser.current = raw.uid;
             setTeam(token.claims.admin === true);
             setError("");
           }
         } catch (e) {
           if (active && current === revision) {
             setError(friendly(e));
-            setUser(null);
-            setProfile(null);
+            if (!sameUser) {
+              setUser(null);
+              setProfile(null);
+              activeUser.current = null;
+            }
             setTeam(false);
           }
         } finally {
@@ -101,6 +118,7 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     if (!demo && authClient) await signOut(authClient);
     if (user) clearUserDrafts(user.id, demo);
+    activeUser.current = null;
     sessionStorage.removeItem("sr-demo-role");
     setDemo(null);
     setUser(null);

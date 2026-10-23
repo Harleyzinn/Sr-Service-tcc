@@ -205,3 +205,227 @@ test("Firestore isolates customers and enforces admin updates with append-only h
     await env.cleanup();
   }
 });
+test("private financial rules enforce ownership, integer cents, immutable ledger and recurrence identity", async () => {
+  const env = await initializeTestEnvironment({
+    projectId: "demo-sr-service",
+    firestore: {
+      host: "127.0.0.1",
+      port: 8080,
+      rules: await readFile(
+        new URL("../firestore.rules", import.meta.url),
+        "utf8",
+      ),
+    },
+  });
+  try {
+    await env.clearFirestore();
+    const owner = env
+      .authenticatedContext("owner", {
+        email: "owner@example.com",
+        email_verified: true,
+      })
+      .firestore();
+    const other = env
+      .authenticatedContext("other", { email_verified: true, admin: true })
+      .firestore();
+    const unverified = env
+      .authenticatedContext("owner", { email_verified: false })
+      .firestore();
+    const ref = (db, kind, id) => doc(db, "users", "owner", kind, id);
+    const meta = () => ({
+      version: 1,
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp(),
+    });
+    await assertSucceeds(
+      setDoc(ref(owner, "accounts", "bank"), {
+        name: "Banco",
+        type: "checking",
+        opening_cents: 10000,
+        ...meta(),
+      }),
+    );
+    await assertFails(getDoc(ref(other, "accounts", "bank")));
+    await assertFails(getDoc(ref(unverified, "accounts", "bank")));
+    const entry = {
+      kind: "expense",
+      description: "Compra de ferramentas",
+      category: "Equipamentos",
+      account_id: "bank",
+      to_account_id: "",
+      amount_cents: 1500,
+      date: "2026-10-23",
+      status: "paid",
+      series_id: "",
+      ...meta(),
+    };
+    await assertSucceeds(setDoc(ref(owner, "entries", "payment"), entry));
+    await assertFails(
+      setDoc(ref(owner, "entries", "future-paid"), {
+        ...entry,
+        date: "2099-12-31",
+      }),
+    );
+    await assertSucceeds(
+      setDoc(ref(owner, "entries", "future-pending"), {
+        ...entry,
+        date: "2099-12-31",
+        status: "pending",
+      }),
+    );
+    await assertFails(
+      setDoc(ref(owner, "entries", "fraction"), {
+        ...entry,
+        amount_cents: 15.5,
+      }),
+    );
+    await assertFails(
+      setDoc(ref(owner, "entries", "bad-date"), {
+        ...entry,
+        date: "2026-02-31",
+      }),
+    );
+    await assertFails(
+      setDoc(ref(owner, "entries", "missing-account"), {
+        ...entry,
+        account_id: "missing",
+      }),
+    );
+    await assertFails(
+      setDoc(ref(owner, "entries", "self"), {
+        ...entry,
+        kind: "transfer",
+        to_account_id: "bank",
+      }),
+    );
+    await assertFails(setDoc(ref(other, "entries", "stolen"), entry));
+    await assertFails(
+      updateDoc(ref(owner, "entries", "payment"), {
+        amount_cents: 100,
+        version: 2,
+        updated_at: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(ref(owner, "entries", "payment"), {
+        status: "void",
+        version: 1,
+        updated_at: serverTimestamp(),
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(ref(owner, "entries", "payment"), {
+        status: "void",
+        version: 2,
+        updated_at: serverTimestamp(),
+      }),
+    );
+    await assertFails(deleteDoc(ref(owner, "entries", "payment")));
+    const rule = {
+      kind: "income",
+      description: "Salário mensal",
+      category: "Salário",
+      account_id: "bank",
+      amount_cents: 50000,
+      start_date: "2026-01-31",
+      end_date: "",
+      frequency: "monthly",
+      active: true,
+      ...meta(),
+    };
+    await assertSucceeds(setDoc(ref(owner, "series", "salary"), rule));
+    const recurring = {
+      ...entry,
+      kind: rule.kind,
+      description: rule.description,
+      category: rule.category,
+      amount_cents: rule.amount_cents,
+      date: "2026-02-28",
+      status: "pending",
+      series_id: "salary",
+      ...meta(),
+    };
+    await assertSucceeds(
+      setDoc(ref(owner, "entries", "salary_2026-02-28"), recurring),
+    );
+    await assertFails(setDoc(ref(owner, "entries", "random-id"), recurring));
+    await assertFails(
+      setDoc(ref(owner, "entries", "salary_2026-02-27"), {
+        ...recurring,
+        date: "2026-02-27",
+      }),
+    );
+    await assertFails(
+      setDoc(ref(owner, "entries", "salary_2026-03-31"), {
+        ...recurring,
+        date: "2026-03-31",
+        amount_cents: 999999,
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(ref(owner, "series", "salary"), {
+        active: false,
+        version: 2,
+        updated_at: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      setDoc(ref(owner, "entries", "salary_2026-03-31"), {
+        ...recurring,
+        date: "2026-03-31",
+      }),
+    );
+    await assertSucceeds(
+      setDoc(ref(owner, "budgets", "2026-10_Equipamentos"), {
+        month: "2026-10",
+        category: "Equipamentos",
+        limit_cents: 5000,
+        ...meta(),
+      }),
+    );
+    await assertFails(
+      setDoc(ref(owner, "budgets", "duplicate"), {
+        month: "2026-10",
+        category: "Equipamentos",
+        limit_cents: 5000,
+        ...meta(),
+      }),
+    );
+    await assertSucceeds(
+      setDoc(ref(owner, "goals", "reserve"), {
+        name: "Reserva",
+        target_cents: 10000,
+        saved_cents: 1000,
+        ...meta(),
+      }),
+    );
+    await assertFails(
+      setDoc(ref(owner, "goals", "invalid"), {
+        name: "Reserva",
+        target_cents: 100,
+        saved_cents: 1000,
+        ...meta(),
+      }),
+    );
+    await assertSucceeds(
+      setDoc(doc(owner, "users", "owner", "preferences", "interface"), {
+        theme: "dark",
+        widgets: ["chart"],
+      }),
+    );
+    await assertFails(
+      setDoc(doc(other, "users", "owner", "preferences", "interface"), {
+        theme: "light",
+        widgets: [],
+      }),
+    );
+    await assertFails(
+      setDoc(doc(owner, "users", "owner", "preferences", "interface"), {
+        theme: "dark",
+        widgets: ["admin"],
+      }),
+    );
+  } finally {
+    await env.cleanup();
+  }
+});

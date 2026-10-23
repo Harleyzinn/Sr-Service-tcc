@@ -8,9 +8,17 @@ import {
   updatePassword,
   updateProfile,
   signOut,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 import { authClient } from "./firebase";
 import { ensureProfile } from "./firebase-data";
+export async function loginGoogle() {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+  const result = await signInWithPopup(authClient, provider);
+  return result.user;
+}
 export async function login(email, password) {
   const { user } = await signInWithEmailAndPassword(
     authClient,

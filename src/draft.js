@@ -40,11 +40,17 @@ export function readDraft(key) {
     return null;
   }
 }
-export function saveDraft(key, form, step) {
+export function saveDraft(key, form, step, requestId) {
   try {
     sessionStorage.setItem(
       key,
-      JSON.stringify({ version: 1, form, step, savedAt: Date.now() }),
+      JSON.stringify({
+        version: 1,
+        form,
+        step,
+        savedAt: Date.now(),
+        requestId,
+      }),
     );
     return true;
   } catch {

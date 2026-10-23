@@ -1,6 +1,6 @@
 # SR Service · Cranes & Components
 
-Site institucional e portal de atendimento em React, Vite, **Firebase Authentication e Cloud Firestore**. Interface responsiva em português para clientes e equipe administrativa.
+Site institucional, portal de atendimento e financeiro privado em React, Vite, **Firebase Authentication e Cloud Firestore**. Interface responsiva em português para clientes e equipe administrativa, com temas claro, escuro e automático.
 
 ## Executar localmente
 
@@ -31,6 +31,8 @@ Para reiniciar os registros fictícios, remova a chave `sr-service-demo-v2` do l
 | `/app/orcamentos/:id`                  | Detalhes, proposta, histórico e impressão/PDF              |
 | `/app/perfil`, `/app/ajuda`            | Perfil, alteração de senha e perguntas frequentes          |
 | `/app/clientes`                        | Clientes com pedidos recebidos; exclusivo da equipe        |
+| `/app/financeiro`                      | Caixa privado, agenda, contas, recorrências e planejamento |
+| `/app/configuracoes`                   | Tema e widgets financeiros persistentes                    |
 
 URLs `.html` antigas redirecionam para as equivalentes. O diretório `legacy/` preserva o original para referência e não faz parte do build.
 
@@ -45,13 +47,36 @@ URLs `.html` antigas redirecionam para as equivalentes. O diretório `legacy/` p
 
 O rascunho local não é um pedido enviado. Ele não é sincronizado entre dispositivos ou abas e pode ficar indisponível se o armazenamento do navegador estiver bloqueado.
 
+O identificador da operação acompanha o rascunho: repetir o envio dos mesmos dados após uma resposta perdida recupera o pedido original. Atualizações administrativas verificam a revisão lida e recusam sobrescrever alterações feitas por outro acesso. Use **Recarregar dados** antes de reaplicar a mudança. A renovação do token da mesma conta preserva formulários abertos.
+
+## Financeiro privado
+
+- **Entrada / Gasto:** descrição, valor, data e conta. Categoria, situação e parcelamento ficam em opções expansíveis. Valores são armazenados em centavos inteiros; parcelamento de até 36 vezes distribui cada centavo e grava todas as parcelas atomicamente. Só a primeira pode começar realizada.
+- **Contas e transferências:** conta corrente, dinheiro ou cartão com saldo manual. Saldos derivam do valor inicial e dos lançamentos realizados. Uma transferência é um único registro com origem e destino e não altera o consolidado. O saldo inicial e a identidade da conta permanecem imutáveis; correções financeiras usam lançamentos explícitos.
+- **Livro e agenda:** busca, categoria, situação, seleção de mês, paginação de 20 itens e CSV filtrado. Datas futuras usam situação prevista. Cancelar preserva o registro e permite restaurá-lo como previsão; valores realizados não podem ser editados silenciosamente: cancele e registre a correção.
+- **Recorrências:** entradas, salários, despesas fixas ou assinaturas com frequência semanal, mensal ou anual; editar, pausar, retomar e encerrar por data. O dia original é preservado ao atravessar meses curtos. Ocorrências futuras são projeções, não pagamentos automáticos. A confirmação grava o identificador determinístico `serie_data`, impedindo duplicação. Modificar uma série afeta suas projeções ainda não registradas; lançamentos persistidos permanecem intactos.
+- **Painel:** saldo realizado, entradas e gastos mensais, comparação de despesas com o mês anterior, gráfico interativo de seis meses e projeção em 30 dias. A projeção inclui pendências registradas (inclusive atrasadas) e ocorrências virtuais do início do mês atual até o horizonte de 30 dias. Previsões de séries em meses anteriores podem ser consultadas pela seleção de mês; não são assumidas como pagamentos ou atrasos confirmados.
+- **Planejamento:** limites por mês/categoria e metas com reserva informada manualmente. A reserva de uma meta não movimenta nem duplica o saldo das contas. Alertas apontam vencimentos, uso de 80% ou mais do limite e despesa superior ao dobro da mediana da categoria quando há pelo menos três registros históricos. Nenhuma análise é gerada por IA externa.
+- **Preferências:** tema e seleção dos widgets de gráfico, alertas e metas. Contas reais persistem no Firestore; demonstração utiliza armazenamento local separado por conta.
+- **Exportação:** JSON com os cinco conjuntos de registros persistidos, versão de esquema e data da exportação; CSV contém somente o mês e os filtros selecionados e identifica previsões virtuais. O JSON não inclui credenciais, perfis, pedidos ou preferências. Não há importador/restauração automática nesta versão.
+
+O financeiro começa vazio, inclusive na demonstração. **Uma proposta comercial não é um recebimento**: nenhum valor dos orçamentos é lançado automaticamente. As operações reais são confirmadas somente após resposta do Firestore. Em erro de leitura, o painel não apresenta totais parciais.
+
+### Sincronização, custos e limites
+
+Os dispositivos consultam o mesmo Firestore ao abrir/atualizar o módulo e após gravações; a volta da conexão também dispara consulta. Não há listener em tempo real, fila de escrita offline ou cache persistente do financeiro: o aviso de conexão informa essa limitação e os rascunhos de orçamento continuam locais. Não há importação automática dos dados da demonstração para uma conta real.
+
+As coleções financeiras são consultadas em lotes de 250 documentos; os totais ainda dependem da leitura do histórico completo, e cada atualização pode consumir novamente essas leituras. Acima de 10 mil registros em uma coleção, o cálculo é interrompido com orientação, sem truncar saldos. A listagem industrial anterior ainda carrega todos os pedidos autorizados. Antes de escalar esses volumes, implemente consolidações transacionais no servidor e consultas paginadas adequadas aos relatórios; a paginação visual não reduz essas leituras.
+
+Não há integração bancária, fechamento de fatura, processamento de pagamentos, notificações push ou agendador de cobranças. Cartões e metas são controles manuais identificados na interface.
+
 ## Configurar o Firebase real
 
 Sem as variáveis, o acesso real mostra uma mensagem de configuração; a demonstração continua disponível. Nenhum projeto de produção foi provisionado ou alterado automaticamente.
 
 1. No console Firebase, crie ou selecione um projeto e registre um **aplicativo Web**.
 2. Copie `.env.example` para `.env` e preencha `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID` e `VITE_FIREBASE_APP_ID` com os valores da configuração Web. Esses identificadores são públicos. Nunca coloque chaves privadas ou credenciais de conta de serviço em variáveis `VITE_`.
-3. Em Authentication, habilite **E-mail/senha**, configure senha mínima de oito caracteres e autorize os domínios de desenvolvimento e produção usados pelo aplicativo. O Vite usa `127.0.0.1` por padrão.
+3. Em Authentication, habilite **E-mail/senha** e **Google**, configure o e-mail de suporte do provedor Google, senha mínima de oito caracteres e autorize os domínios de desenvolvimento e produção usados pelo aplicativo. O Vite usa `127.0.0.1` por padrão. O login Google utiliza popup; valide-o no domínio publicado e nos navegadores de destino. Provedor desabilitado ou popup bloqueado são informados na interface.
 4. Crie o **Cloud Firestore** no modo de produção. Publique as regras e o índice versionados, selecionando explicitamente seu projeto:
 
 ```sh
@@ -84,6 +109,8 @@ O script preserva outras claims e exige uma conta já cadastrada. Configure as c
 - O histórico é um mapa de eventos dentro do pedido. Toda mudança de status exige, pelas regras, exatamente um novo evento com o mesmo status e timestamp do servidor, na mesma gravação. Eventos anteriores não podem ser alterados ou removidos. Atualizações sem mudança de status preservam o histórico.
 - Clientes e administradores não excluem pedidos pela API Web.
 - Senhas ficam exclusivamente no Firebase Authentication. A troca de senha pode exigir login recente; a interface orienta a entrar novamente.
+- `users/{uid}/accounts`, `entries`, `series`, `budgets` e `goals`: financeiro exclusivo do UID com e-mail confirmado. A claim de administrador do atendimento **não concede acesso ao financeiro alheio**. Regras validam campos, tipos, datas reais, centavos, contas de origem/destino, identidade das recorrências e versões; impedem exclusão e edição dos valores de lançamentos existentes. Pagamentos futuros são recusados também pelas regras (dia em UTC−03).
+- `users/{uid}/preferences/interface`: somente tema e widgets permitidos, restritos ao proprietário. Não há credencial administrativa no navegador.
 
 Documentação: [autenticação Web](https://firebase.google.com/docs/auth/web/manage-users), [ações de e-mail](https://firebase.google.com/docs/auth/custom-email-handler), [custom claims](https://firebase.google.com/docs/auth/admin/custom-claims), [regras do Firestore](https://firebase.google.com/docs/firestore/security/rules-conditions).
 
@@ -98,11 +125,11 @@ npm run test:firebase
 npm run build
 ```
 
-`npm test` verifica documentos, validação e busca. `test:e2e` percorre as páginas e as demonstrações sem configuração real. Execute essa suíte sem um `.env` preenchido, pois ela também verifica mensagens de configuração ausente.
+`npm test` verifica documentos, validação, busca, exportação segura, centavos, parcelas, transferências, recorrências, calendários, projeções e limites. `test:e2e` percorre as páginas e as demonstrações sem configuração real, incluindo financeiro, recarga, cancelamento/restauração, exportação JSON, temas e celular. Execute essa suíte sem um `.env` preenchido, pois ela também verifica mensagens de configuração ausente.
 
 `test:rules` inicia o emulador Firestore com o projeto fictício `demo-sr-service`, publica as regras localmente e testa acessos permitidos e bloqueados, isolamento entre clientes, papéis, imutabilidade e histórico obrigatório. Requer Java 21+.
 
-`test:firebase` inicia os emuladores Authentication e Firestore e executa uma jornada completa no navegador: cadastro, confirmação de e-mail, login, gravação de orçamento, atualização de proposta por administrador, recuperação e acesso com a nova senha. Os códigos de e-mail são obtidos do emulador; nenhum e-mail é enviado. A suíte usa a porta 5174 e configuração de emuladores apenas no processo de testes.
+`test:firebase` inicia os emuladores Authentication e Firestore e executa jornadas no navegador: cadastro, confirmação de e-mail, login, gravação de orçamento, atualização de proposta por administrador, recuperação e acesso com a nova senha; fluxo de popup Google no emulador; financeiro persistido, repetição idempotente, conflito de versões, consulta em segunda aba, preferências e renovação de token sem perder formulário. Os códigos de e-mail são obtidos do emulador; nenhum e-mail é enviado. A suíte usa a porta 5174 e configuração de emuladores apenas no processo de testes.
 
 Para desenvolvimento manual com emuladores, use um projeto fictício `demo-sr-service`, preencha as variáveis Web de teste e defina `VITE_FIREBASE_USE_EMULATORS=true`. Inicie:
 
@@ -129,6 +156,12 @@ O build contém apenas a aplicação nova, imagens e fontes locais. O envio de o
 
 Contas e pedidos do sistema anterior não são importados automaticamente. O novo aplicativo não usa o cliente, as variáveis, a migração SQL ou as dependências do banco anterior. O material original permanece apenas em `legacy/`.
 
+### Backup e recuperação operacional
+
+Antes de publicar regras em um projeto com dados existentes, inventarie os documentos, produza uma exportação administrativa do Firestore em ambiente confiável e valide sua restauração em um projeto separado. A ativação de backup gerenciado, PITR, armazenamento em bucket ou tarefas agendadas depende do plano, região, permissões e custos do projeto; nada disso foi habilitado automaticamente. Mantenha exports em armazenamento privado com acesso restrito e política de retenção. O JSON do financeiro é um complemento manual; não substitui backup integral nem restauração validada. Não importe a demonstração nem sobrescreva documentos de produção para validar o sistema.
+
+Consulte [AUDIT.md](AUDIT.md) para o diagnóstico inicial e [EVOLUTION_REPORT.md](EVOLUTION_REPORT.md) para escopo, resultados e pendências da evolução.
+
 ## Estrutura
 
 ```text
@@ -145,6 +178,13 @@ src/
   portal.jsx           Páginas do cliente e da equipe
   public.jsx           Site institucional
   ui.jsx               Componentes e layouts
+  finance/domain.js    Regras de caixa, calendário e recorrências
+  finance/repository.js Persistência transacional real e demo isolada
+  finance/use-finance.jsx Estado, consulta e confirmação de gravações
+  finance/page.jsx     Painel e fluxos financeiros
+  theme.jsx            Preferências locais/Firebase e tema
+  preferences.jsx      Configurações de aparência e widgets
+  network.jsx          Estado de conexão e orientação offline
 firestore.rules        Regras de acesso e integridade
 firestore.indexes.json Índice de pedidos e exclusão do histórico da indexação
 firebase.json          Emuladores, Firestore e Hosting

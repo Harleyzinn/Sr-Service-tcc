@@ -7,8 +7,10 @@ import {
   resendVerification,
   requestPasswordReset,
   resetPassword,
+  loginGoogle,
 } from "./firebase-auth";
 import { useAuth } from "./auth";
+import { ThemeToggle } from "./theme";
 import { digits, validateProfile } from "./domain";
 import { Brand, ErrorBox, Eyebrow, Field, Icon, SuccessBox } from "./ui";
 export function AuthPage({ mode = "login" }) {
@@ -140,6 +142,7 @@ export function AuthPage({ mode = "login" }) {
       </aside>
       <main id="main-content" className="auth-form-area">
         <div className="auth-top">
+          <ThemeToggle />
           <Link to="/" className="text-link">
             <Icon name="ArrowLeft" size={16} />
             Voltar ao site
@@ -156,6 +159,42 @@ export function AuthPage({ mode = "login" }) {
           <h1>{title}</h1>
           <p>{description}</p>
           <ErrorBox>{error || sessionError}</ErrorBox>
+          {mode === "login" && (
+            <>
+              <button
+                className="button secondary full google-login"
+                disabled={busy || loading}
+                onClick={async () => {
+                  setError("");
+                  if (!configured) {
+                    setError(
+                      "O login Google precisa da configuração do Firebase.",
+                    );
+                    return;
+                  }
+                  setBusy(true);
+                  try {
+                    await loginGoogle();
+                    navigate(target, { replace: true });
+                  } catch (e) {
+                    setError(friendly(e));
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                <span aria-hidden="true" className="google-letter">
+                  G
+                </span>
+                Continuar com Google
+              </button>
+              <div className="auth-divider">
+                <span />
+                ou entre com seu e-mail
+                <span />
+              </div>
+            </>
+          )}
           {canResend && (
             <button
               type="button"
