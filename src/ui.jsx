@@ -301,6 +301,7 @@ export function ScrollTop() {
       "/app/perfil": "Meu perfil",
       "/app/financeiro": "Financeiro",
       "/app/configuracoes": "Preferências",
+      "/app/chat": "Chat",
       "/app/clientes": "Clientes",
       "/app/ajuda": "Central de ajuda",
       "/privacidade": "Privacidade",
@@ -399,6 +400,14 @@ export function PublicLayout() {
           </span>
         </div>
       </footer>
+      <Link
+        className="chat-launcher"
+        to="/app/chat"
+        aria-label="Abrir chat com a equipe"
+      >
+        <Icon name="MessagesSquare" size={20} />
+        <span>Chat com a equipe</span>
+      </Link>
     </>
   );
 }
@@ -460,6 +469,7 @@ export function PortalLayout() {
       ? [["/app/novo-orcamento", "Plus", "Novo orçamento"]]
       : [["/app/clientes", "Building2", "Clientes"]]),
     ["/app/financeiro", "Wallet", "Meu financeiro"],
+    ["/app/chat", "MessagesSquare", admin ? "Conversas" : "Chat com a equipe"],
   ];
   async function exit() {
     try {

@@ -35,6 +35,7 @@ const Customers = portalPage("Customers"),
   QuoteDetail = portalPage("QuoteDetail"),
   Quotes = portalPage("Quotes");
 const Finance = lazy(() => import("./finance/page"));
+const Chat = lazy(() => import("./chat/page"));
 const Settings = lazy(() =>
   import("./preferences").then((m) => ({ default: m.Settings })),
 );
@@ -154,6 +155,7 @@ function App() {
                       <Route path="novo-orcamento" element={<NewQuote />} />
                       <Route path="perfil" element={<Profile />} />
                       <Route path="financeiro" element={<Finance />} />
+                      <Route path="chat" element={<Chat />} />
                       <Route path="configuracoes" element={<Settings />} />
                       <Route path="ajuda" element={<Help />} />
                       <Route element={<Protected adminOnly />}>

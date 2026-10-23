@@ -1,3 +1,35 @@
+.chat-launcher {
+  position: fixed;
+  bottom: 22px;
+  right: 22px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 18px;
+  border-radius: 12px;
+  background: #f08b36;
+  color: #152d40;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 6px 25px #10263830;
+  max-width: calc(100vw - 36px);
+}
+.chat-launcher:hover {
+  background: #ffab65;
+}
+@media (max-width: 760px) {
+  .chat-launcher {
+    right: 18px;
+    bottom: 18px;
+    padding: 14px;
+  }
+}
+@media print {
+  .chat-launcher {
+    display: none;
+  }
+}
 .settings-panel {
   padding: 30px;
   max-width: 850px;

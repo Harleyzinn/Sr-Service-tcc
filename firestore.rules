@@ -65,6 +65,54 @@ service cloud.firestore {
         && history(request.resource.data,resource.data);
       allow delete: if false;
     }
+    // One persistent support conversation per customer. Messages cannot be edited or removed.
+    function chatAccess(uid) { return verified() && (request.auth.uid == uid || admin()); }
+    function chatSender(uid, data) {
+      return data.sender_id == request.auth.uid
+        && ((data.sender_role == 'customer' && request.auth.uid == uid) || (data.sender_role == 'admin' && admin()));
+    }
+    function chatMessage(data, uid) {
+      return data.keys().hasAll(['sender_id','sender_role','text','created_at'])
+        && data.keys().hasOnly(['sender_id','sender_role','text','created_at'])
+        && chatSender(uid,data) && text(data.text,1,4000)
+        && data.text.matches('[\\s\\S]*[^\\s][\\s\\S]*') && data.created_at == request.time;
+    }
+    function chatRoom(data, uid) {
+      return data.keys().hasAll(['customer_id','customer_name','customer_company','created_at','updated_at','last_message_id','last_text','last_sender_id','last_sender_role','message_count'])
+        && data.keys().hasOnly(['customer_id','customer_name','customer_company','created_at','updated_at','last_message_id','last_text','last_sender_id','last_sender_role','message_count'])
+        && data.customer_id == uid && text(data.customer_name,1,120) && text(data.customer_company,0,160)
+        && data.created_at is timestamp && data.updated_at == request.time
+        && data.last_message_id.matches('^[a-zA-Z0-9_-]{1,80}$') && text(data.last_text,1,4000)
+        && data.message_count is int && data.message_count > 0 && data.message_count <= 1000000000;
+    }
+    function chatLatest(data, uid) {
+      let path = /databases/$(database)/documents/conversations/$(uid)/messages/$(data.last_message_id);
+      let message = getAfter(path).data;
+      return !exists(path) && chatMessage(message,uid)
+        && message.text == data.last_text && message.sender_id == data.last_sender_id && message.sender_role == data.last_sender_role;
+    }
+    match /conversations/{uid} {
+      allow get: if chatAccess(uid);
+      allow list: if admin();
+      allow create: if verified() && request.auth.uid == uid && chatRoom(request.resource.data,uid)
+        && request.resource.data.created_at == request.time && request.resource.data.message_count == 1
+        && request.resource.data.last_sender_role == 'customer' && chatLatest(request.resource.data,uid);
+      allow update: if chatAccess(uid) && chatRoom(request.resource.data,uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updated_at','last_message_id','last_text','last_sender_id','last_sender_role','message_count'])
+        && request.resource.data.message_count == resource.data.message_count + 1 && chatLatest(request.resource.data,uid);
+      allow delete: if false;
+      match /messages/{id} {
+        function linked() {
+          let room = getAfter(/databases/$(database)/documents/conversations/$(uid)).data;
+          return room.last_message_id == id && room.updated_at == request.time
+            && room.last_text == request.resource.data.text && room.last_sender_id == request.auth.uid
+            && room.last_sender_role == request.resource.data.sender_role;
+        }
+        allow read: if chatAccess(uid);
+        allow create: if chatAccess(uid) && id.matches('^[a-zA-Z0-9_-]{1,80}$') && chatMessage(request.resource.data,uid) && linked();
+        allow update, delete: if false;
+      }
+    }
     // Private finance. Customer-service administrators have no cross-user access.
     function own(uid) { return verified() && request.auth.uid == uid; }
     function money(value, minimum) { return value is int && value >= minimum && value <= 99999999999; }

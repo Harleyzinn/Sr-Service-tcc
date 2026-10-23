@@ -33,8 +33,19 @@ Para reiniciar os registros fictícios, remova a chave `sr-service-demo-v2` do l
 | `/app/clientes`                        | Clientes com pedidos recebidos; exclusivo da equipe        |
 | `/app/financeiro`                      | Caixa privado, agenda, contas, recorrências e planejamento |
 | `/app/configuracoes`                   | Tema e widgets financeiros persistentes                    |
+| `/app/chat`                            | Conversa cliente/equipe e caixa de atendimentos do admin   |
 
 URLs `.html` antigas redirecionam para as equivalentes. O diretório `legacy/` preserva o original para referência e não faz parte do build.
+
+## Chat com os administradores
+
+O botão flutuante **Chat com a equipe** no site público leva ao login e depois à conversa. No portal, o cliente acessa **Chat com a equipe** e os administradores acessam **Conversas**. O cliente inicia uma conversa única vinculada à conta; qualquer administrador com custom claim `admin: true` pode responder. As mensagens são textos de até 4.000 caracteres, com autor e data, atualizados em tempo real e preservados no Firestore após recarga e novo login. Ctrl/Cmd + Enter envia; Enter permite quebra de linha.
+
+As regras isolam clientes e validam o papel do remetente. Mensagem e resumo do atendimento são gravados na mesma transação, com identificador estável para repetição segura e incremento atômico da contagem. Envios simultâneos preservam as mensagens; o aplicativo não permite editá-las ou apagá-las. A interface só incorpora mensagens confirmadas pelo servidor; sem conexão, novos envios ficam bloqueados. Texto digitado com erro de envio permanece no campo enquanto a tela estiver aberta, mas não é um rascunho persistente após recarregar.
+
+O chat usa o SDK completo do Firestore apenas em seu módulo carregado sob demanda, com listeners e cache padrão somente em memória. O restante do sistema continua com Firestore Lite. A primeira janela consulta 50 mensagens e a caixa administrativa 25 conversas; **Carregar mensagens anteriores** / **Carregar mais conversas** ampliam as janelas. Isso não trunca o histórico armazenado. Ampliar a janela reconecta o listener e pode reler documentos já exibidos; alterações em tempo real e transações também consomem operações do Firestore. Os listeners são removidos ao sair da tela. Não há notificações push, indicador de leitura, anexos, resposta automática ou garantia de atendimento imediato.
+
+Para funcionar em produção, preencha a configuração Firebase e publique as **novas regras** de `firestore.rules`, além do build. Não é necessário habilitar outro provedor ou criar índices compostos para o chat; as consultas usam índices de campo único padrão. Na demonstração, as conversas começam vazias, ficam em `sr-chat-demo-v1` no localStorage e nunca são enviadas ao servidor. Veja [CHAT.md](CHAT.md) para modelo e validações.
 
 ## Melhorias no atendimento
 
@@ -202,6 +213,9 @@ src/
   theme.jsx            Preferências locais/Firebase e tema
   preferences.jsx      Configurações de aparência e widgets
   network.jsx          Estado de conexão e orientação offline
+  chat/firebase.js     SDK Firestore completo, restrito ao módulo de chat
+  chat/repository.js   Conversas, listeners e envios transacionais
+  chat/page.jsx        Caixa administrativa e conversa do cliente
 firestore.rules        Regras de acesso e integridade
 firestore.indexes.json Índice de pedidos e exclusão do histórico da indexação
 firebase.json          Emuladores, Firestore e Hosting

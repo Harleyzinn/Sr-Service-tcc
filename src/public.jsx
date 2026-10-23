@@ -450,6 +450,12 @@ export function Privacy() {
         de contato, localização e descrição do equipamento necessários para
         avaliar o serviço.
       </p>
+      <p>
+        Ao utilizar o chat, o texto das mensagens, a identificação de quem
+        enviou e as datas ficam salvos no Cloud Firestore para manter o
+        histórico do atendimento. Cada cliente consulta sua conversa;
+        administradores autorizados podem ler e responder aos atendimentos.
+      </p>
       <h2>Finalidade e acesso</h2>
       <p>
         Os dados são utilizados para autenticação, elaboração e acompanhamento
@@ -460,7 +466,7 @@ export function Privacy() {
       <h2>Autenticação e armazenamento</h2>
       <p>
         A autenticação é processada pelo Firebase Authentication. O aplicativo
-        não armazena senhas em suas documentos de perfil. A sessão é mantida no
+        não armazena senhas nos documentos de perfil. A sessão é mantida no
         navegador para permitir o acesso à conta. Na demonstração, somente
         registros fictícios são armazenados localmente; evite inserir dados
         pessoais reais nesse ambiente.
